@@ -43,6 +43,8 @@ export class CoursesService {
   }
 
   createCourse(dto: CreateCourseDto) {
+    this.assertSessions(dto.sessions)
+
     const course = this.courseRepository.create({
       ...dto,
       level: dto.level ?? null,
@@ -54,10 +56,18 @@ export class CoursesService {
   }
 
   async updateCourse(id: string, dto: UpdateCourseDto) {
+    this.assertSessions(dto.sessions)
     const course = await this.getCourseById(id)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
     return this.courseRepository.save(course)
+  }
+
+  /** HH:mm strings compare correctly as text. */
+  private assertSessions(sessions?: CreateCourseDto['sessions']) {
+    if (sessions?.some((session) => session.endTime <= session.startTime)) {
+      throw new BadRequestException('validation.schedule.endBeforeStart')
+    }
   }
 
   async deleteCourse(id: string) {

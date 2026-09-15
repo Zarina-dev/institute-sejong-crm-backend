@@ -1,5 +1,13 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+/** ISO weekday: 1 = Monday … 7 = Sunday. Times are HH:mm. */
+export type CourseSession = {
+  weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  startTime: string
+  endTime: string
+  classroom?: string | null
+}
+
 @Entity('courses')
 export class Course {
   @PrimaryGeneratedColumn('uuid')
@@ -20,9 +28,16 @@ export class Course {
   @Column({ type: 'varchar', length: 150, nullable: true })
   teacherName!: string | null
 
-  @Column({ type: 'varchar', length: 150, nullable: true })
-  schedule!: string | null
+  /**
+   * Weekly meeting pattern. The public timetable is generated from this
+   * (sessions × dates between startDate and endDate), so the course is the
+   * single source of truth for "when and where" — there is no separate
+   * timetable table to keep in sync. Replaces the old free-text `schedule`.
+   */
+  @Column({ type: 'jsonb', default: [] })
+  sessions!: CourseSession[]
 
+  /** Default room for sessions that do not name their own. */
   @Column({ type: 'varchar', length: 120, nullable: true })
   classroom!: string | null
 

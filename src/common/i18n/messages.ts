@@ -35,8 +35,6 @@ const en = {
   // ---- validation: news / schedule
   'validation.news.titleRequired': 'Enter a title.',
   'validation.news.bodyRequired': 'Enter the announcement text.',
-  'validation.schedule.subjectRequired': 'Enter a subject.',
-  'validation.schedule.dateInvalid': 'The date is not valid.',
   'validation.schedule.timeInvalid': 'Use HH:mm for times.',
   'validation.schedule.endBeforeStart': 'End time must be after start time.',
 
@@ -52,7 +50,6 @@ const en = {
   'errors.material.notFound': 'Material not found.',
   'errors.material.notAvailable': 'This material is not available.',
   'errors.news.notFound': 'Announcement not found.',
-  'errors.schedule.notFound': 'Schedule entry not found.',
   'errors.fileTooLarge': 'The file is too large. Maximum is {max}.',
 } as const
 
@@ -79,8 +76,6 @@ const ru: Dictionary = {
   'validation.application.emailInvalid': 'Это не похоже на email.',
   'validation.news.titleRequired': 'Введите заголовок.',
   'validation.news.bodyRequired': 'Введите текст объявления.',
-  'validation.schedule.subjectRequired': 'Введите предмет.',
-  'validation.schedule.dateInvalid': 'Дата указана неверно.',
   'validation.schedule.timeInvalid': 'Время в формате ЧЧ:ММ.',
   'validation.schedule.endBeforeStart': 'Время окончания должно быть позже начала.',
   'errors.student.idTaken': 'Этот ID студента уже занят.',
@@ -94,7 +89,6 @@ const ru: Dictionary = {
   'errors.material.notFound': 'Материал не найден.',
   'errors.material.notAvailable': 'Материал недоступен.',
   'errors.news.notFound': 'Объявление не найдено.',
-  'errors.schedule.notFound': 'Запись расписания не найдена.',
   'errors.fileTooLarge': 'Файл слишком большой. Максимум — {max}.',
 }
 
@@ -118,8 +112,6 @@ const ko: Dictionary = {
   'validation.application.emailInvalid': '올바른 이메일 형식이 아닙니다.',
   'validation.news.titleRequired': '제목을 입력하세요.',
   'validation.news.bodyRequired': '공지 내용을 입력하세요.',
-  'validation.schedule.subjectRequired': '과목을 입력하세요.',
-  'validation.schedule.dateInvalid': '날짜 형식이 올바르지 않습니다.',
   'validation.schedule.timeInvalid': '시간은 HH:mm 형식으로 입력하세요.',
   'validation.schedule.endBeforeStart': '종료 시간은 시작 시간 이후여야 합니다.',
   'errors.student.idTaken': '이미 사용 중인 학생 ID입니다.',
@@ -133,7 +125,6 @@ const ko: Dictionary = {
   'errors.material.notFound': '자료를 찾을 수 없습니다.',
   'errors.material.notAvailable': '이용할 수 없는 자료입니다.',
   'errors.news.notFound': '공지를 찾을 수 없습니다.',
-  'errors.schedule.notFound': '시간표 항목을 찾을 수 없습니다.',
   'errors.fileTooLarge': '파일이 너무 큽니다. 최대 {max}까지 가능합니다.',
 }
 
@@ -157,8 +148,6 @@ const ky: Dictionary = {
   'validation.application.emailInvalid': 'Бул email окшобойт.',
   'validation.news.titleRequired': 'Аталышын киргизиңиз.',
   'validation.news.bodyRequired': 'Билдирүүнүн текстин киргизиңиз.',
-  'validation.schedule.subjectRequired': 'Предметти киргизиңиз.',
-  'validation.schedule.dateInvalid': 'Күн туура эмес.',
   'validation.schedule.timeInvalid': 'Убакытты СС:ММ форматында киргизиңиз.',
   'validation.schedule.endBeforeStart': 'Аяктоо убактысы башталуудан кийин болушу керек.',
   'errors.student.idTaken': 'Бул студент ID мурунтан колдонулууда.',
@@ -172,7 +161,6 @@ const ky: Dictionary = {
   'errors.material.notFound': 'Материал табылган жок.',
   'errors.material.notAvailable': 'Бул материал жеткиликсиз.',
   'errors.news.notFound': 'Билдирүү табылган жок.',
-  'errors.schedule.notFound': 'Жадыбал жазуусу табылган жок.',
   'errors.fileTooLarge': 'Файл өтө чоң. Максимум — {max}.',
 }
 

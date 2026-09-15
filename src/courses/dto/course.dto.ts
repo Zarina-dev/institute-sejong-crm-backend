@@ -11,11 +11,33 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
+  Max,
   MaxLength,
   Min,
   MinLength,
   ValidateNested,
 } from 'class-validator'
+
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
+
+export class CourseSessionDto {
+  @IsInt()
+  @Min(1)
+  @Max(7)
+  weekday!: 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+  @Matches(TIME, { message: 'validation.schedule.timeInvalid' })
+  startTime!: string
+
+  @Matches(TIME, { message: 'validation.schedule.timeInvalid' })
+  endTime!: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  classroom?: string | null
+}
 
 export class CreateCourseDto {
   @IsString()
@@ -43,10 +65,13 @@ export class CreateCourseDto {
   @MaxLength(150)
   teacherName?: string | null
 
+  /** Weekly meetings; at most one per weekday slot is sensible but not enforced. */
   @IsOptional()
-  @IsString()
-  @MaxLength(150)
-  schedule?: string | null
+  @IsArray()
+  @ArrayMaxSize(14)
+  @ValidateNested({ each: true })
+  @Type(() => CourseSessionDto)
+  sessions?: CourseSessionDto[]
 
   @IsOptional()
   @IsString()
