@@ -5,6 +5,8 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { CoursesModule } from './courses/courses.module'
 import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
+import { NewsModule } from './news/news.module'
+import { ScheduleModule } from './schedule/schedule.module'
 import { StudentsModule } from './students/students.module'
 
 @Module({
@@ -32,6 +34,8 @@ import { StudentsModule } from './students/students.module'
     MaterialsModule,
     StudentsModule,
     CoursesModule,
+    NewsModule,
+    ScheduleModule,
   ],
   controllers: [HealthController],
 })

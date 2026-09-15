@@ -6,7 +6,14 @@ import { resolveLanguage, translateMessage, type MessageKey } from './messages'
 /** Payload for an HttpException whose message needs placeholders. */
 export type LocalizedMessage = { key: MessageKey; params?: Record<string, string | number> }
 
-export const localized = (key: MessageKey, params?: Record<string, string | number>): LocalizedMessage => ({ key, params })
+/**
+ * Argument for `new BadRequestException(localized('…', { ext }))`.
+ * Nest uses an object argument *as* the response body, so the key has to sit
+ * under `message` for the filter (and any client) to find it.
+ */
+export const localized = (key: MessageKey, params?: Record<string, string | number>) => ({
+  message: { key, params } satisfies LocalizedMessage,
+})
 
 function isLocalizedMessage(value: unknown): value is LocalizedMessage {
   return typeof value === 'object' && value !== null && typeof (value as LocalizedMessage).key === 'string'
