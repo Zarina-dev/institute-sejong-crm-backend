@@ -27,10 +27,12 @@ __decorate([
     __metadata("design:type", Object)
 ], LearningMaterial.prototype, "description", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'varchar', length: 120 }),
     __metadata("design:type", String)
 ], LearningMaterial.prototype, "subject", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'varchar', length: 120 }),
     __metadata("design:type", String)
 ], LearningMaterial.prototype, "course", void 0);
@@ -75,6 +77,7 @@ __decorate([
     __metadata("design:type", Date)
 ], LearningMaterial.prototype, "updatedAt", void 0);
 exports.LearningMaterial = LearningMaterial = __decorate([
-    (0, typeorm_1.Entity)('learning_materials')
+    (0, typeorm_1.Entity)('learning_materials'),
+    (0, typeorm_1.Index)('idx_material_published_updated', ['isPublished', 'updatedAt'])
 ], LearningMaterial);
 //# sourceMappingURL=learning-material.entity.js.map

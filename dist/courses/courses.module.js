@@ -9,12 +9,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CoursesModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const course_entity_1 = require("./course.entity");
-const course_application_entity_1 = require("./course-application.entity");
-const enrollment_entity_1 = require("./enrollment.entity");
+const course_entity_1 = require("./entities/course.entity");
+const course_application_entity_1 = require("./entities/course-application.entity");
+const enrollment_entity_1 = require("./entities/enrollment.entity");
 const courses_controller_1 = require("./courses.controller");
 const courses_service_1 = require("./courses.service");
-const student_entity_1 = require("../students/student.entity");
+const student_entity_1 = require("../students/entities/student.entity");
 let CoursesModule = class CoursesModule {
 };
 exports.CoursesModule = CoursesModule;

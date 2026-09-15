@@ -1,6 +1,8 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+/** Indexes match the list query: filter by subject/course/isPublished, order by updatedAt. */
 @Entity('learning_materials')
+@Index('idx_material_published_updated', ['isPublished', 'updatedAt'])
 export class LearningMaterial {
   @PrimaryGeneratedColumn('uuid')
   id!: string
@@ -11,9 +13,11 @@ export class LearningMaterial {
   @Column({ type: 'text', nullable: true })
   description!: string | null
 
+  @Index()
   @Column({ type: 'varchar', length: 120 })
   subject!: string
 
+  @Index()
   @Column({ type: 'varchar', length: 120 })
   course!: string
 

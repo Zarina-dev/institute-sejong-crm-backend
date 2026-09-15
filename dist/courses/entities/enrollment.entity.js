@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Enrollment = void 0;
 const typeorm_1 = require("typeorm");
+const student_entity_1 = require("../../students/entities/student.entity");
 const course_entity_1 = require("./course.entity");
-const student_entity_1 = require("../students/student.entity");
 let Enrollment = class Enrollment {
 };
 exports.Enrollment = Enrollment;
@@ -21,25 +21,27 @@ __decorate([
     __metadata("design:type", String)
 ], Enrollment.prototype, "id", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'uuid' }),
     __metadata("design:type", String)
 ], Enrollment.prototype, "courseId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => course_entity_1.Course, { onDelete: 'CASCADE' }),
-    (0, typeorm_1.JoinColumn)({ name: 'course_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'courseId' }),
     __metadata("design:type", course_entity_1.Course)
 ], Enrollment.prototype, "course", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'uuid' }),
     __metadata("design:type", String)
 ], Enrollment.prototype, "studentId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => student_entity_1.Student, { onDelete: 'CASCADE' }),
-    (0, typeorm_1.JoinColumn)({ name: 'student_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'studentId' }),
     __metadata("design:type", student_entity_1.Student)
 ], Enrollment.prototype, "student", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 120, nullable: true }),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 20, nullable: true }),
     __metadata("design:type", Object)
 ], Enrollment.prototype, "status", void 0);
 __decorate([
@@ -51,6 +53,7 @@ __decorate([
     __metadata("design:type", Date)
 ], Enrollment.prototype, "updatedAt", void 0);
 exports.Enrollment = Enrollment = __decorate([
-    (0, typeorm_1.Entity)('enrollments')
+    (0, typeorm_1.Entity)('enrollments'),
+    (0, typeorm_1.Unique)('uq_enrollment_student_course', ['studentId', 'courseId'])
 ], Enrollment);
 //# sourceMappingURL=enrollment.entity.js.map

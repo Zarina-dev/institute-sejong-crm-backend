@@ -49,7 +49,7 @@ exports.StudentsService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const student_entity_1 = require("./student.entity");
+const student_entity_1 = require("./entities/student.entity");
 const bcrypt = __importStar(require("bcryptjs"));
 let StudentsService = class StudentsService {
     constructor(studentRepository) {

@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+
+export type StudentStatus = 'active' | 'inactive'
+
+export type TopikFile = {
+  id: string
+  name: string
+  size: number
+  type: string
+}
 
 @Entity('students')
 export class Student {
@@ -8,6 +17,7 @@ export class Student {
   @Column({ type: 'varchar', length: 120 })
   name!: string
 
+  /** Human-readable login id (e.g. ST-1001); `unique` also creates the index. */
   @Column({ type: 'varchar', length: 120, unique: true })
   studentId!: string
 
@@ -20,25 +30,22 @@ export class Student {
   @Column({ type: 'varchar', length: 120 })
   course!: string
 
+  /** TOPIK level label (e.g. "TOPIK 3") — free text chosen in the admin form. */
   @Column({ type: 'varchar', length: 120 })
   level!: string
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   admissionDate!: string | null
 
+  @Index()
   @Column({ type: 'varchar', length: 20, default: 'active' })
-  status!: 'active' | 'inactive'
+  status!: StudentStatus
 
   @Column({ type: 'varchar', length: 255 })
   password!: string
 
   @Column({ type: 'jsonb', nullable: true, default: [] })
-  topikFiles!: Array<{
-    id: string
-    name: string
-    size: number
-    type: string
-  }>
+  topikFiles!: TopikFile[]
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

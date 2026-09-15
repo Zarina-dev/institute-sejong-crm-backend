@@ -47,6 +47,7 @@ __decorate([
     __metadata("design:type", Object)
 ], Student.prototype, "admissionDate", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'active' }),
     __metadata("design:type", String)
 ], Student.prototype, "status", void 0);

@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity('courses')
 export class Course {
@@ -38,6 +38,8 @@ export class Course {
   @Column({ type: 'int', default: 0 })
   capacity!: number
 
+  /** The public site lists published courses only — indexed for that filter. */
+  @Index()
   @Column({ type: 'boolean', default: false })
   isPublished!: boolean
 

@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
-import { Course } from './course.entity'
-import { CourseApplication } from './course-application.entity'
-import { Enrollment } from './enrollment.entity'
-import { Student } from '../students/student.entity'
+import { Course } from './entities/course.entity'
+import { CourseApplication } from './entities/course-application.entity'
+import { Enrollment } from './entities/enrollment.entity'
+import { Student } from '../students/entities/student.entity'
 
 export type CreateCourseInput = {
   title: string
@@ -116,38 +116,29 @@ export class CoursesService {
     return this.courseRepository.save(course)
   }
 
+  /**
+   * Relations load through the real foreign keys now (see the entity note),
+   * so the per-row `getCourseById` fallback that used to live here — an N+1
+   * workaround for join columns that were always NULL — is gone.
+   */
   async listApplications() {
-    const applications = await this.applicationRepository.find({
+    return this.applicationRepository.find({
       order: { createdAt: 'DESC' },
-      relations: ['course', 'student'],
+      relations: { course: true, student: true },
     })
-
-    const normalized = await Promise.all(
-      applications.map(async (application) => ({
-        ...application,
-        course: application.course ?? (await this.getCourseById(application.courseId)),
-        student: application.student,
-      })),
-    )
-
-    return normalized
   }
 
   async getApplicationById(id: string) {
     const application = await this.applicationRepository.findOne({
       where: { id },
-      relations: ['course', 'student'],
+      relations: { course: true, student: true },
     })
 
     if (!application) {
       throw new NotFoundException('Application not found')
     }
 
-    return {
-      ...application,
-      course: application.course ?? (await this.getCourseById(application.courseId)),
-      student: application.student,
-    }
+    return application
   }
 
   async createApplication(input: CreateApplicationInput) {
@@ -177,7 +168,7 @@ export class CoursesService {
 
     application.status = status
 
-    const course = application.course ?? (await this.getCourseById(application.courseId))
+    const course = application.course
 
     if (status === 'approved' || status === 'enrolled') {
       const studentRecord = application.studentId

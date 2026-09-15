@@ -63,6 +63,7 @@ __decorate([
     __metadata("design:type", Number)
 ], Course.prototype, "capacity", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'boolean', default: false }),
     __metadata("design:type", Boolean)
 ], Course.prototype, "isPublished", void 0);

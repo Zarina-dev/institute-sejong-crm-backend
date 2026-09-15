@@ -1,3 +1,10 @@
+export type StudentStatus = 'active' | 'inactive';
+export type TopikFile = {
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+};
 export declare class Student {
     id: string;
     name: string;
@@ -7,14 +14,9 @@ export declare class Student {
     course: string;
     level: string;
     admissionDate: string | null;
-    status: 'active' | 'inactive';
+    status: StudentStatus;
     password: string;
-    topikFiles: Array<{
-        id: string;
-        name: string;
-        size: number;
-        type: string;
-    }>;
+    topikFiles: TopikFile[];
     createdAt: Date;
     updatedAt: Date;
 }

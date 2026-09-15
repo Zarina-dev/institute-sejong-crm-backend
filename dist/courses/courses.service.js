@@ -16,10 +16,10 @@ exports.CoursesService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
-const course_entity_1 = require("./course.entity");
-const course_application_entity_1 = require("./course-application.entity");
-const enrollment_entity_1 = require("./enrollment.entity");
-const student_entity_1 = require("../students/student.entity");
+const course_entity_1 = require("./entities/course.entity");
+const course_application_entity_1 = require("./entities/course-application.entity");
+const enrollment_entity_1 = require("./entities/enrollment.entity");
+const student_entity_1 = require("../students/entities/student.entity");
 let CoursesService = class CoursesService {
     constructor(courseRepository, applicationRepository, enrollmentRepository, studentRepository) {
         this.courseRepository = courseRepository;
@@ -78,30 +78,20 @@ let CoursesService = class CoursesService {
         return this.courseRepository.save(course);
     }
     async listApplications() {
-        const applications = await this.applicationRepository.find({
+        return this.applicationRepository.find({
             order: { createdAt: 'DESC' },
-            relations: ['course', 'student'],
+            relations: { course: true, student: true },
         });
-        const normalized = await Promise.all(applications.map(async (application) => ({
-            ...application,
-            course: application.course ?? (await this.getCourseById(application.courseId)),
-            student: application.student,
-        })));
-        return normalized;
     }
     async getApplicationById(id) {
         const application = await this.applicationRepository.findOne({
             where: { id },
-            relations: ['course', 'student'],
+            relations: { course: true, student: true },
         });
         if (!application) {
             throw new common_1.NotFoundException('Application not found');
         }
-        return {
-            ...application,
-            course: application.course ?? (await this.getCourseById(application.courseId)),
-            student: application.student,
-        };
+        return application;
     }
     async createApplication(input) {
         if (!input.courseId || !input.applicantName || !input.applicantEmail) {
@@ -123,7 +113,7 @@ let CoursesService = class CoursesService {
     async updateApplicationStatus(id, status) {
         const application = await this.getApplicationById(id);
         application.status = status;
-        const course = application.course ?? (await this.getCourseById(application.courseId));
+        const course = application.course;
         if (status === 'approved' || status === 'enrolled') {
             const studentRecord = application.studentId
                 ? await this.studentRepository.findOne({ where: { id: application.studentId } })

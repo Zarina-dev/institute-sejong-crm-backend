@@ -10,11 +10,10 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
+const courses_module_1 = require("./courses/courses.module");
+const health_controller_1 = require("./health.controller");
 const materials_module_1 = require("./materials/materials.module");
 const students_module_1 = require("./students/students.module");
-const courses_module_1 = require("./courses/courses.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,8 +39,7 @@ exports.AppModule = AppModule = __decorate([
             students_module_1.StudentsModule,
             courses_module_1.CoursesModule,
         ],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        controllers: [health_controller_1.HealthController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

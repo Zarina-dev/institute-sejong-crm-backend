@@ -11,8 +11,8 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CourseApplication = void 0;
 const typeorm_1 = require("typeorm");
+const student_entity_1 = require("../../students/entities/student.entity");
 const course_entity_1 = require("./course.entity");
-const student_entity_1 = require("../students/student.entity");
 let CourseApplication = class CourseApplication {
 };
 exports.CourseApplication = CourseApplication;
@@ -37,25 +37,28 @@ __decorate([
     __metadata("design:type", Object)
 ], CourseApplication.prototype, "goal", void 0);
 __decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 120, nullable: true }),
+    (0, typeorm_1.Index)(),
+    (0, typeorm_1.Column)({ type: 'varchar', length: 20, nullable: true }),
     __metadata("design:type", Object)
 ], CourseApplication.prototype, "status", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'uuid' }),
     __metadata("design:type", String)
 ], CourseApplication.prototype, "courseId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => course_entity_1.Course, { onDelete: 'CASCADE' }),
-    (0, typeorm_1.JoinColumn)({ name: 'course_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'courseId' }),
     __metadata("design:type", course_entity_1.Course)
 ], CourseApplication.prototype, "course", void 0);
 __decorate([
+    (0, typeorm_1.Index)(),
     (0, typeorm_1.Column)({ type: 'uuid', nullable: true }),
     __metadata("design:type", Object)
 ], CourseApplication.prototype, "studentId", void 0);
 __decorate([
     (0, typeorm_1.ManyToOne)(() => student_entity_1.Student, { nullable: true, onDelete: 'SET NULL' }),
-    (0, typeorm_1.JoinColumn)({ name: 'student_id' }),
+    (0, typeorm_1.JoinColumn)({ name: 'studentId' }),
     __metadata("design:type", Object)
 ], CourseApplication.prototype, "student", void 0);
 __decorate([

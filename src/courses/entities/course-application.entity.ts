@@ -1,7 +1,32 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
-import { Course } from './course.entity'
-import { Student } from '../students/student.entity'
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm'
 
+import { Student } from '../../students/entities/student.entity'
+import { Course } from './course.entity'
+
+export type ApplicationStatus = 'pending' | 'approved' | 'rejected' | 'enrolled'
+
+export type ApplicationDocument = {
+  id: string
+  name: string
+  size: number
+  type: string
+  dataUrl?: string
+}
+
+/**
+ * A request to join a course, from a signed-in student or an anonymous
+ * applicant. See Enrollment for why the scalar ids and the relations share
+ * a column.
+ */
 @Entity('course_applications')
 export class CourseApplication {
   @PrimaryGeneratedColumn('uuid')
@@ -19,31 +44,29 @@ export class CourseApplication {
   @Column({ type: 'varchar', length: 120, nullable: true })
   goal!: string | null
 
-  @Column({ type: 'varchar', length: 120, nullable: true })
-  status!: 'pending' | 'approved' | 'rejected' | 'enrolled' | null
+  @Index()
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  status!: ApplicationStatus | null
 
+  @Index()
   @Column({ type: 'uuid' })
   courseId!: string
 
   @ManyToOne(() => Course, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'course_id' })
+  @JoinColumn({ name: 'courseId' })
   course!: Course
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
   studentId!: string | null
 
+  /** Kept when the student is deleted so the application history survives. */
   @ManyToOne(() => Student, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'student_id' })
+  @JoinColumn({ name: 'studentId' })
   student!: Student | null
 
   @Column({ type: 'jsonb', nullable: true, default: [] })
-  documents!: Array<{
-    id: string
-    name: string
-    size: number
-    type: string
-    dataUrl?: string
-  }>
+  documents!: ApplicationDocument[]
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

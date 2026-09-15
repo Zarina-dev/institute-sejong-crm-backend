@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Student } from './student.entity';
+import { Student } from './entities/student.entity';
 export type CreateStudentInput = {
     name: string;
     studentId: string;
@@ -30,13 +30,8 @@ export declare class StudentsService {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -51,13 +46,8 @@ export declare class StudentsService {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -71,13 +61,8 @@ export declare class StudentsService {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -99,13 +84,8 @@ export declare class StudentsService {
             course: string;
             level: string;
             admissionDate: string | null;
-            status: "active" | "inactive";
-            topikFiles: Array<{
-                id: string;
-                name: string;
-                size: number;
-                type: string;
-            }>;
+            status: import("./entities/student.entity").StudentStatus;
+            topikFiles: import("./entities/student.entity").TopikFile[];
             createdAt: Date;
             updatedAt: Date;
         };

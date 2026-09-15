@@ -1,8 +1,8 @@
 import { Repository } from 'typeorm';
-import { Course } from './course.entity';
-import { CourseApplication } from './course-application.entity';
-import { Enrollment } from './enrollment.entity';
-import { Student } from '../students/student.entity';
+import { Course } from './entities/course.entity';
+import { CourseApplication } from './entities/course-application.entity';
+import { Enrollment } from './entities/enrollment.entity';
+import { Student } from '../students/entities/student.entity';
 export type CreateCourseInput = {
     title: string;
     description?: string | null;
@@ -49,112 +49,12 @@ export declare class CoursesService {
     }>;
     publishCourse(id: string): Promise<Course>;
     unpublishCourse(id: string): Promise<Course>;
-    listApplications(): Promise<{
-        course: Course;
-        student: Student | null;
-        id: string;
-        applicantName: string;
-        applicantEmail: string;
-        phone: string | null;
-        goal: string | null;
-        status: "pending" | "approved" | "rejected" | "enrolled" | null;
-        courseId: string;
-        studentId: string | null;
-        documents: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-            dataUrl?: string;
-        }>;
-        createdAt: Date;
-        updatedAt: Date;
-    }[]>;
-    getApplicationById(id: string): Promise<{
-        course: Course;
-        student: Student | null;
-        id: string;
-        applicantName: string;
-        applicantEmail: string;
-        phone: string | null;
-        goal: string | null;
-        status: "pending" | "approved" | "rejected" | "enrolled" | null;
-        courseId: string;
-        studentId: string | null;
-        documents: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-            dataUrl?: string;
-        }>;
-        createdAt: Date;
-        updatedAt: Date;
-    }>;
+    listApplications(): Promise<CourseApplication[]>;
+    getApplicationById(id: string): Promise<CourseApplication>;
     createApplication(input: CreateApplicationInput): Promise<CourseApplication>;
-    updateApplicationStatus(id: string, status: 'approved' | 'rejected' | 'enrolled'): Promise<{
-        course: Course;
-        student: Student | null;
-        id: string;
-        applicantName: string;
-        applicantEmail: string;
-        phone: string | null;
-        goal: string | null;
-        status: "pending" | "approved" | "rejected" | "enrolled" | null;
-        courseId: string;
-        studentId: string | null;
-        documents: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-            dataUrl?: string;
-        }>;
-        createdAt: Date;
-        updatedAt: Date;
-    } & CourseApplication>;
-    rejectApplication(id: string): Promise<{
-        course: Course;
-        student: Student | null;
-        id: string;
-        applicantName: string;
-        applicantEmail: string;
-        phone: string | null;
-        goal: string | null;
-        status: "pending" | "approved" | "rejected" | "enrolled" | null;
-        courseId: string;
-        studentId: string | null;
-        documents: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-            dataUrl?: string;
-        }>;
-        createdAt: Date;
-        updatedAt: Date;
-    } & CourseApplication>;
-    approveApplication(id: string): Promise<{
-        course: Course;
-        student: Student | null;
-        id: string;
-        applicantName: string;
-        applicantEmail: string;
-        phone: string | null;
-        goal: string | null;
-        status: "pending" | "approved" | "rejected" | "enrolled" | null;
-        courseId: string;
-        studentId: string | null;
-        documents: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-            dataUrl?: string;
-        }>;
-        createdAt: Date;
-        updatedAt: Date;
-    } & CourseApplication>;
+    updateApplicationStatus(id: string, status: 'approved' | 'rejected' | 'enrolled'): Promise<CourseApplication>;
+    rejectApplication(id: string): Promise<CourseApplication>;
+    approveApplication(id: string): Promise<CourseApplication>;
     listEnrollments(): Promise<Enrollment[]>;
     createEnrollment(studentId: string, courseId: string): Promise<Enrollment>;
     listStudentEnrollments(studentId: string): Promise<Enrollment[]>;

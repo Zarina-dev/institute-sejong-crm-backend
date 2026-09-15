@@ -12,13 +12,8 @@ export declare class StudentsController {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }[]>;
@@ -40,13 +35,8 @@ export declare class StudentsController {
             course: string;
             level: string;
             admissionDate: string | null;
-            status: "active" | "inactive";
-            topikFiles: Array<{
-                id: string;
-                name: string;
-                size: number;
-                type: string;
-            }>;
+            status: import("./entities/student.entity").StudentStatus;
+            topikFiles: import("./entities/student.entity").TopikFile[];
             createdAt: Date;
             updatedAt: Date;
         } | undefined;
@@ -62,13 +52,8 @@ export declare class StudentsController {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }>;
@@ -82,13 +67,8 @@ export declare class StudentsController {
         course: string;
         level: string;
         admissionDate: string | null;
-        status: "active" | "inactive";
-        topikFiles: Array<{
-            id: string;
-            name: string;
-            size: number;
-            type: string;
-        }>;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
         createdAt: Date;
         updatedAt: Date;
     }>;
