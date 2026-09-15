@@ -1,1 +1,51 @@
-node_modules
+# institut-backend (NestJS)
+
+# ---- Build output ----------------------------------------------------------
+dist/
+
+# ---- Runtime uploads: user content, never source. Keep the folder. --------
+uploads/*
+!uploads/.gitkeep
+
+# ---- Local PostgreSQL data if docker-compose is bind-mounted --------------
+pgdata/
+# ---- Dependencies ----------------------------------------------------------
+node_modules/
+
+# ---- Environment: only the .env.example template is tracked ---------------
+.env
+.env.*
+!.env.example
+
+# ---- Logs ------------------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- TypeScript incremental cache -----------------------------------------
+*.tsbuildinfo
+node_modules/.tmp/
+
+# ---- Tests / coverage ------------------------------------------------------
+coverage/
+
+# ---- OS --------------------------------------------------------------------
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# ---- Editors: personal settings stay local --------------------------------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+*~
+
+# ---- Claude Code local settings -------------------------------------------
+.claude/settings.local.json

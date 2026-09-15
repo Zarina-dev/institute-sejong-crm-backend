@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
+import { unlink } from 'fs/promises'
 import { Repository } from 'typeorm'
+
+import { CreateMaterialDto } from './dto/create-material.dto'
+import { UpdateMaterialDto } from './dto/update-material.dto'
 import { LearningMaterial } from './entities/learning-material.entity'
 
 export type MaterialsQuery = {
@@ -14,8 +18,12 @@ export type MaterialsQuery = {
   sortOrder?: 'ASC' | 'DESC'
 }
 
+const SORTABLE = ['title', 'updatedAt', 'createdAt'] as const
+
 @Injectable()
 export class MaterialsService {
+  private readonly logger = new Logger(MaterialsService.name)
+
   constructor(
     @InjectRepository(LearningMaterial)
     private readonly materialRepository: Repository<LearningMaterial>,
@@ -24,24 +32,18 @@ export class MaterialsService {
   async listMaterials(query: MaterialsQuery) {
     const page = Math.max(1, Number(query.page ?? 1))
     const limit = Math.min(50, Math.max(1, Number(query.limit ?? 20)))
-    const skip = (page - 1) * limit
     const search = query.search?.trim()
-
-    const sortBy = ['title', 'updatedAt', 'createdAt'].includes(query.sortBy ?? '') ? (query.sortBy as 'title' | 'updatedAt' | 'createdAt') : 'updatedAt'
+    const sortBy = SORTABLE.includes(query.sortBy as (typeof SORTABLE)[number]) ? query.sortBy! : 'updatedAt'
     const sortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC'
 
-    const qb = this.materialRepository
-      .createQueryBuilder('material')
+    const qb = this.materialRepository.createQueryBuilder('material')
 
     if (query.published && query.published !== 'all') {
-      qb.where('material.isPublished = :isPublished', { isPublished: query.published === 'true' })
+      qb.andWhere('material.isPublished = :isPublished', { isPublished: query.published === 'true' })
     }
 
     if (search) {
-      qb.andWhere(
-        '(material.title ILIKE :search OR material.description ILIKE :search)',
-        { search: `%${search}%` },
-      )
+      qb.andWhere('(material.title ILIKE :search OR material.description ILIKE :search)', { search: `%${search}%` })
     }
 
     if (query.subject) {
@@ -54,7 +56,7 @@ export class MaterialsService {
 
     const [items, total] = await qb
       .orderBy(`material.${sortBy}`, sortOrder)
-      .skip(skip)
+      .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount()
 
@@ -85,38 +87,54 @@ export class MaterialsService {
     const material = await this.materialRepository.findOne({ where: { id } })
 
     if (!material) {
-      throw new NotFoundException('Material not found')
+      throw new NotFoundException('errors.material.notFound')
     }
 
     return material
   }
 
-  async createMaterial(input: Partial<LearningMaterial>) {
-    const material = this.materialRepository.create(input)
+  createMaterial(dto: CreateMaterialDto, file?: Express.Multer.File) {
+    const material = this.materialRepository.create({
+      ...dto,
+      description: dto.description ?? null,
+      isPublished: dto.isPublished ?? false,
+      storageKey: file?.path ?? null,
+      originalFileName: file?.originalname ?? null,
+      fileType: file?.mimetype ?? null,
+      fileSize: file?.size ?? null,
+    })
+
     return this.materialRepository.save(material)
   }
 
-  async updateMaterial(id: string, input: Partial<LearningMaterial>) {
+  async updateMaterial(id: string, dto: UpdateMaterialDto) {
     const material = await this.getMaterialById(id)
-    Object.assign(material, input)
+    // Only DTO-whitelisted keys reach here, so a spread cannot touch id,
+    // storageKey or timestamps.
+    Object.assign(material, dto)
     return this.materialRepository.save(material)
   }
 
   async deleteMaterial(id: string) {
     const material = await this.getMaterialById(id)
     await this.materialRepository.remove(material)
+
+    // The row is gone; the file must not outlive it. Failure to unlink is
+    // logged, not surfaced — the user's delete already succeeded.
+    if (material.storageKey) {
+      await unlink(material.storageKey).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== 'ENOENT') {
+          this.logger.warn(`Could not remove file ${material.storageKey}: ${error.message}`)
+        }
+      })
+    }
+
     return { success: true }
   }
 
-  async publishMaterial(id: string) {
+  async setPublished(id: string, isPublished: boolean) {
     const material = await this.getMaterialById(id)
-    material.isPublished = true
-    return this.materialRepository.save(material)
-  }
-
-  async unpublishMaterial(id: string) {
-    const material = await this.getMaterialById(id)
-    material.isPublished = false
+    material.isPublished = isPublished
     return this.materialRepository.save(material)
   }
 }

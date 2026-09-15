@@ -5,37 +5,7 @@ import { Course } from './entities/course.entity'
 import { CourseApplication } from './entities/course-application.entity'
 import { Enrollment } from './entities/enrollment.entity'
 import { Student } from '../students/entities/student.entity'
-
-export type CreateCourseInput = {
-  title: string
-  description?: string | null
-  subject: string
-  level?: string | null
-  teacherName?: string | null
-  schedule?: string | null
-  classroom?: string | null
-  courseCode?: string | null
-  startDate?: string | null
-  endDate?: string | null
-  capacity?: number
-  isPublished?: boolean
-}
-
-export type CreateApplicationInput = {
-  applicantName: string
-  applicantEmail: string
-  phone?: string | null
-  goal?: string | null
-  courseId: string
-  studentId?: string | null
-  documents?: Array<{
-    id: string
-    name: string
-    size: number
-    type: string
-    dataUrl?: string
-  }>
-}
+import { CreateApplicationDto, CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 
 @Injectable()
 export class CoursesService {
@@ -66,35 +36,27 @@ export class CoursesService {
     const course = await this.courseRepository.findOne({ where: { id } })
 
     if (!course) {
-      throw new NotFoundException('Course not found')
+      throw new NotFoundException('errors.course.notFound')
     }
 
     return course
   }
 
-  async createCourse(input: CreateCourseInput) {
-    if (!input.title || !input.subject) {
-      throw new BadRequestException('필수 입력값이 누락되었습니다.')
-    }
-
+  createCourse(dto: CreateCourseDto) {
     const course = this.courseRepository.create({
-      ...input,
-      level: input.level ?? null,
-      capacity: Number(input.capacity ?? 0),
-      isPublished: input.isPublished ?? false,
+      ...dto,
+      level: dto.level ?? null,
+      capacity: dto.capacity ?? 0,
+      isPublished: dto.isPublished ?? false,
     })
 
     return this.courseRepository.save(course)
   }
 
-  async updateCourse(id: string, input: Partial<CreateCourseInput>) {
+  async updateCourse(id: string, dto: UpdateCourseDto) {
     const course = await this.getCourseById(id)
-
-    Object.assign(course, {
-      ...input,
-      capacity: input.capacity !== undefined ? Number(input.capacity) : course.capacity,
-    })
-
+    // Only DTO-whitelisted keys reach here.
+    Object.assign(course, dto)
     return this.courseRepository.save(course)
   }
 
@@ -104,15 +66,9 @@ export class CoursesService {
     return { success: true }
   }
 
-  async publishCourse(id: string) {
+  async setPublished(id: string, isPublished: boolean) {
     const course = await this.getCourseById(id)
-    course.isPublished = true
-    return this.courseRepository.save(course)
-  }
-
-  async unpublishCourse(id: string) {
-    const course = await this.getCourseById(id)
-    course.isPublished = false
+    course.isPublished = isPublished
     return this.courseRepository.save(course)
   }
 
@@ -135,29 +91,37 @@ export class CoursesService {
     })
 
     if (!application) {
-      throw new NotFoundException('Application not found')
+      throw new NotFoundException('errors.application.notFound')
     }
 
     return application
   }
 
-  async createApplication(input: CreateApplicationInput) {
-    if (!input.courseId || !input.applicantName || !input.applicantEmail) {
-      throw new BadRequestException('수강 신청에 필요한 정보가 누락되었습니다.')
-    }
-
-    const course = await this.getCourseById(input.courseId)
+  async createApplication(dto: CreateApplicationDto) {
+    const course = await this.getCourseById(dto.courseId)
 
     if (!course.isPublished) {
-      throw new BadRequestException('현재 공개 중인 과정만 신청할 수 있습니다.')
+      throw new BadRequestException('errors.course.notPublished')
+    }
+
+    // One live application per (student, course): a second click on "apply"
+    // returns the existing one instead of creating a duplicate.
+    if (dto.studentId) {
+      const existing = await this.applicationRepository.findOne({
+        where: { studentId: dto.studentId, courseId: dto.courseId },
+        relations: { course: true, student: true },
+      })
+
+      if (existing && existing.status !== 'rejected') {
+        return existing
+      }
     }
 
     const application = this.applicationRepository.create({
-      ...input,
+      ...dto,
       status: 'pending',
-      courseId: input.courseId,
-      studentId: input.studentId ?? null,
-      documents: input.documents ?? [],
+      studentId: dto.studentId ?? null,
+      documents: dto.documents ?? [],
     })
 
     return this.applicationRepository.save(application)
@@ -194,18 +158,10 @@ export class CoursesService {
     return this.applicationRepository.save(application)
   }
 
-  async rejectApplication(id: string) {
-    return this.updateApplicationStatus(id, 'rejected')
-  }
-
-  async approveApplication(id: string) {
-    return this.updateApplicationStatus(id, 'approved')
-  }
-
-  async listEnrollments() {
+  listEnrollments() {
     return this.enrollmentRepository.find({
       order: { createdAt: 'DESC' },
-      relations: ['course', 'student'],
+      relations: { course: true, student: true },
     })
   }
 
@@ -213,7 +169,7 @@ export class CoursesService {
     const student = await this.studentRepository.findOne({ where: { id: studentId } })
 
     if (!student) {
-      throw new NotFoundException('Student not found')
+      throw new NotFoundException('errors.student.notFound')
     }
 
     const course = await this.getCourseById(courseId)
@@ -221,7 +177,7 @@ export class CoursesService {
     const existing = await this.enrollmentRepository.findOne({ where: { studentId, courseId } })
 
     if (existing) {
-      throw new BadRequestException('이미 등록된 과정입니다.')
+      throw new BadRequestException('errors.enrollment.duplicate')
     }
 
     const enrollment = this.enrollmentRepository.create({
@@ -246,7 +202,7 @@ export class CoursesService {
       : await this.studentRepository.findOne({ where: { studentId } })
 
     if (!student) {
-      throw new NotFoundException('Student not found')
+      throw new NotFoundException('errors.student.notFound')
     }
 
     return this.enrollmentRepository.find({

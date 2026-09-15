@@ -47,6 +47,10 @@ export class Student {
   @Column({ type: 'jsonb', nullable: true, default: [] })
   topikFiles!: TopikFile[]
 
+  /** Free-form admin note (visa status, payments, remarks). Not shown to the student. */
+  @Column({ type: 'text', nullable: true })
+  notes!: string | null
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date
 

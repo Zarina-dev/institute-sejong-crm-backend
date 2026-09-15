@@ -1,26 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
-import { Student } from './entities/student.entity'
 import * as bcrypt from 'bcryptjs'
+import { Repository } from 'typeorm'
 
-export type CreateStudentInput = {
-  name: string
-  studentId: string
-  email: string
-  phone: string
-  course: string
-  level: string
-  admissionDate?: string | null
-  status?: 'active' | 'inactive'
-  password?: string
-  topikFiles?: Array<{
-    id: string
-    name: string
-    size: number
-    type: string
-  }>
-}
+import { CreateStudentDto } from './dto/create-student.dto'
+import { UpdateStudentDto } from './dto/update-student.dto'
+import { Student } from './entities/student.entity'
 
 @Injectable()
 export class StudentsService {
@@ -29,128 +14,115 @@ export class StudentsService {
     private readonly studentRepository: Repository<Student>,
   ) {}
 
-  async listStudents() {
-    const students = await this.studentRepository.find({ order: { createdAt: 'DESC' } })
-
-    return students.map((student) => ({
-      ...student,
-      password: student.password,
-    }))
+  /** Admin listing — includes password and notes by design (admin-only screen). */
+  listStudents() {
+    return this.studentRepository.find({ order: { createdAt: 'DESC' } })
   }
 
   async getStudentByStudentId(studentId: string) {
     const student = await this.studentRepository.findOne({ where: { studentId } })
 
     if (!student) {
-      throw new NotFoundException('Student not found')
+      throw new NotFoundException('errors.student.notFound')
     }
 
     return student
   }
 
-  /** Same record the portal receives at login — never includes the password. */
+  /** What the student portal may see: no password, no admin notes. */
   async getPublicStudent(studentId: string) {
-    return this.sanitizeStudent(await this.getStudentByStudentId(studentId.trim()))
+    return this.toPublic(await this.getStudentByStudentId(studentId.trim()))
   }
 
-  async createStudent(input: CreateStudentInput) {
-    const normalizedId = input.studentId.trim()
-    const normalizedPassword = input.password?.trim() || this.generatePassword(normalizedId)
-
-    if (!normalizedId) {
-      throw new BadRequestException('studentId is required')
-    }
-
-    if (await this.studentRepository.findOne({ where: { studentId: normalizedId } })) {
-      throw new BadRequestException('이미 사용 중인 학생 ID입니다.')
-    }
+  async createStudent(dto: CreateStudentDto) {
+    const studentId = dto.studentId.trim()
+    await this.assertStudentIdFree(studentId)
 
     const student = this.studentRepository.create({
-      ...input,
-      studentId: normalizedId,
-      password: normalizedPassword,
-      status: input.status ?? 'active',
-      admissionDate: input.admissionDate ?? null,
-      topikFiles: input.topikFiles ?? [],
+      ...dto,
+      studentId,
+      password: dto.password?.trim() || this.generatePassword(studentId),
+      status: dto.status ?? 'active',
+      admissionDate: dto.admissionDate ?? null,
+      notes: dto.notes?.trim() || null,
+      topikFiles: dto.topikFiles ?? [],
     })
 
-    const saved = await this.studentRepository.save(student)
-
-    return {
-      ...saved,
-      password: normalizedPassword,
-    }
+    return this.studentRepository.save(student)
   }
 
-  async updateStudent(id: string, input: Partial<CreateStudentInput>) {
+  async updateStudent(id: string, dto: UpdateStudentDto) {
     const student = await this.studentRepository.findOne({ where: { id } })
 
     if (!student) {
-      throw new NotFoundException('Student not found')
+      throw new NotFoundException('errors.student.notFound')
     }
 
-    if (input.studentId && input.studentId.trim() !== student.studentId) {
-      const existing = await this.studentRepository.findOne({ where: { studentId: input.studentId.trim() } })
-      if (existing && existing.id !== id) {
-        throw new BadRequestException('이미 사용 중인 학생 ID입니다.')
-      }
+    const nextStudentId = dto.studentId?.trim()
+
+    if (nextStudentId && nextStudentId !== student.studentId) {
+      await this.assertStudentIdFree(nextStudentId, id)
     }
+
+    // An empty password field in the edit form means "keep the current one".
+    const { password, ...rest } = dto
 
     Object.assign(student, {
-      ...input,
-      studentId: input.studentId?.trim() ?? student.studentId,
-      password: input.password ? input.password.trim() : student.password,
-      topikFiles: input.topikFiles ?? student.topikFiles,
-      admissionDate: input.admissionDate ?? student.admissionDate,
+      ...rest,
+      ...(nextStudentId ? { studentId: nextStudentId } : {}),
+      ...(password?.trim() ? { password: password.trim() } : {}),
+      ...(dto.notes !== undefined ? { notes: dto.notes?.trim() || null } : {}),
     })
 
-    const saved = await this.studentRepository.save(student)
-
-    return {
-      ...saved,
-      password: saved.password,
-    }
+    return this.studentRepository.save(student)
   }
 
   async deleteStudent(id: string) {
     const student = await this.studentRepository.findOne({ where: { id } })
 
     if (!student) {
-      throw new NotFoundException('Student not found')
+      throw new NotFoundException('errors.student.notFound')
     }
 
     await this.studentRepository.remove(student)
-
     return { success: true }
   }
 
-  async validateStudentLogin(studentId: string, password: string) {
-    const student = await this.studentRepository.findOne({ where: { studentId } })
+  /**
+   * Resolves to the public student record, or throws 401/403 with a message
+   * key — the exception filter localises it. A failed login used to come back
+   * as HTTP 200 `{ valid: false, reason }`, which no HTTP client, cache or
+   * filter could tell apart from success.
+   */
+  async login(studentId: string, password: string) {
+    const student = await this.studentRepository.findOne({ where: { studentId: studentId.trim() } })
 
-    if (!student) {
-      return { valid: false, reason: '학생 ID 또는 비밀번호가 올바르지 않습니다.' }
+    const matches =
+      student &&
+      (student.password.startsWith('$2') ? await bcrypt.compare(password, student.password) : student.password === password)
+
+    if (!student || !matches) {
+      throw new UnauthorizedException('errors.login.invalid')
     }
 
     if (student.status !== 'active') {
-      return { valid: false, reason: '비활동 상태의 학생은 사이트에 접속할 수 없습니다.' }
+      throw new ForbiddenException('errors.student.inactive')
     }
 
-    const matchesPlainText = student.password === password
-    const matchesHash = student.password.startsWith('$2') && (await bcrypt.compare(password, student.password))
+    return { valid: true as const, student: this.toPublic(student) }
+  }
 
-    if (!matchesPlainText && !matchesHash) {
-      return { valid: false, reason: '학생 ID 또는 비밀번호가 올바르지 않습니다.' }
-    }
+  private async assertStudentIdFree(studentId: string, exceptId?: string) {
+    const existing = await this.studentRepository.findOne({ where: { studentId } })
 
-    return {
-      valid: true,
-      student: this.sanitizeStudent(student),
+    if (existing && existing.id !== exceptId) {
+      throw new BadRequestException('errors.student.idTaken')
     }
   }
 
-  private sanitizeStudent(student: Student) {
-    const { password, ...rest } = student
-
+  private toPublic(student: Student) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, notes, ...rest } = student
     return rest
   }
 
