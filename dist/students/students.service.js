@@ -69,6 +69,9 @@ let StudentsService = class StudentsService {
         }
         return student;
     }
+    async getPublicStudent(studentId) {
+        return this.sanitizeStudent(await this.getStudentByStudentId(studentId.trim()));
+    }
     async createStudent(input) {
         const normalizedId = input.studentId.trim();
         const normalizedPassword = input.password?.trim() || this.generatePassword(normalizedId);

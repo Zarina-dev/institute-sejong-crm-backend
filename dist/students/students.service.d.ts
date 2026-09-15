@@ -36,6 +36,20 @@ export declare class StudentsService {
         updatedAt: Date;
     }[]>;
     getStudentByStudentId(studentId: string): Promise<Student>;
+    getPublicStudent(studentId: string): Promise<{
+        id: string;
+        name: string;
+        studentId: string;
+        email: string;
+        phone: string;
+        course: string;
+        level: string;
+        admissionDate: string | null;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     createStudent(input: CreateStudentInput): Promise<{
         password: string;
         id: string;

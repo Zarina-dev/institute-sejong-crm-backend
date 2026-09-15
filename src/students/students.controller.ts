@@ -25,6 +25,16 @@ export class StudentsController {
     return students
   }
 
+  /**
+   * Fresh copy of one student by login id, without the password. The student
+   * portal polls this so a course approved after sign-in shows up without a
+   * re-login (the session only holds a snapshot taken at login).
+   */
+  @Get(':studentId')
+  async findOne(@Param('studentId') studentId: string) {
+    return this.studentsService.getPublicStudent(studentId)
+  }
+
   @Post('login')
   async login(@Body() body: { studentId: string; password: string }) {
     const result = await this.studentsService.validateStudentLogin(body.studentId, body.password)

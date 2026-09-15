@@ -48,6 +48,11 @@ export class StudentsService {
     return student
   }
 
+  /** Same record the portal receives at login — never includes the password. */
+  async getPublicStudent(studentId: string) {
+    return this.sanitizeStudent(await this.getStudentByStudentId(studentId.trim()))
+  }
+
   async createStudent(input: CreateStudentInput) {
     const normalizedId = input.studentId.trim()
     const normalizedPassword = input.password?.trim() || this.generatePassword(normalizedId)

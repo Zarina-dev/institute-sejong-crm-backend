@@ -26,6 +26,9 @@ let StudentsController = class StudentsController {
         }
         return students;
     }
+    async findOne(studentId) {
+        return this.studentsService.getPublicStudent(studentId);
+    }
     async login(body) {
         const result = await this.studentsService.validateStudentLogin(body.studentId, body.password);
         if (!result.valid) {
@@ -51,6 +54,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], StudentsController.prototype, "list", null);
+__decorate([
+    (0, common_1.Get)(':studentId'),
+    __param(0, (0, common_1.Param)('studentId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], StudentsController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Post)('login'),
     __param(0, (0, common_1.Body)()),

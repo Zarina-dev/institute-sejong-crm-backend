@@ -17,6 +17,20 @@ export declare class StudentsController {
         createdAt: Date;
         updatedAt: Date;
     }[]>;
+    findOne(studentId: string): Promise<{
+        id: string;
+        name: string;
+        studentId: string;
+        email: string;
+        phone: string;
+        course: string;
+        level: string;
+        admissionDate: string | null;
+        status: import("./entities/student.entity").StudentStatus;
+        topikFiles: import("./entities/student.entity").TopikFile[];
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
     login(body: {
         studentId: string;
         password: string;
