@@ -1,4 +1,6 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+
+import { Course } from '../../courses/entities/course.entity'
 
 /** Indexes match the list query: filter by subject/course/isPublished, order by updatedAt. */
 @Entity('learning_materials')
@@ -12,6 +14,20 @@ export class LearningMaterial {
 
   @Column({ type: 'text', nullable: true })
   description!: string | null
+
+  /**
+   * The course this material belongs to. Source of truth for classification;
+   * `subject` / `course` below are display labels copied from it on save
+   * (and kept for rows created before the link existed). Deleting a course
+   * detaches its materials rather than deleting them.
+   */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  courseId!: string | null
+
+  @ManyToOne(() => Course, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'courseId' })
+  courseRef?: Course | null
 
   @Index()
   @Column({ type: 'varchar', length: 120 })

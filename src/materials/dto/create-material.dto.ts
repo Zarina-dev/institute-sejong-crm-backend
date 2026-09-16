@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
+import { IsBoolean, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator'
 
 /** Multipart fields arrive as strings; "true"/"false" become booleans. */
 const toBoolean = ({ value }: { value: unknown }) =>
@@ -22,15 +22,9 @@ export class CreateMaterialDto {
   @MaxLength(4000)
   description?: string | null
 
-  @IsString()
-  @MinLength(1, { message: 'validation.material.subjectRequired' })
-  @MaxLength(120)
-  subject!: string
-
-  @IsString()
-  @MinLength(1, { message: 'validation.material.courseRequired' })
-  @MaxLength(120)
-  course!: string
+  /** Course record the material belongs to; subject and course labels are derived from it. */
+  @IsUUID('4', { message: 'validation.material.courseRequired' })
+  courseId!: string
 
   @IsOptional()
   @Transform(toBoolean)

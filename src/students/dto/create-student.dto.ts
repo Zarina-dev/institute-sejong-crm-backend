@@ -8,10 +8,12 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator'
 
@@ -60,10 +62,17 @@ export class CreateStudentDto {
   @MaxLength(80)
   phone!: string
 
+  /** Course record; the `course` label is derived from it. Null = no course yet. */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID('4', { message: 'validation.student.courseRequired' })
+  courseId?: string | null
+
+  /** Display label; ignored when `courseId` is given. Kept for legacy clients. */
+  @IsOptional()
   @IsString()
-  @MinLength(1, { message: 'validation.student.courseRequired' })
   @MaxLength(120)
-  course!: string
+  course?: string
 
   @IsString()
   @MinLength(1, { message: 'validation.student.levelRequired' })

@@ -161,6 +161,7 @@ export class CoursesService {
         : null
 
       if (studentRecord) {
+        studentRecord.courseId = course.id
         studentRecord.course = course.title
         await this.studentRepository.save(studentRecord)
       }

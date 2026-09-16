@@ -1,4 +1,6 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+
+import { Course } from '../../courses/entities/course.entity'
 
 export type StudentStatus = 'active' | 'inactive'
 
@@ -29,7 +31,20 @@ export class Student {
   @Column({ type: 'varchar', length: 80 })
   phone!: string
 
-  @Column({ type: 'varchar', length: 120 })
+  /**
+   * Current course as a record (set on approval or from the admin form).
+   * `course` keeps the title as a display label — and holds legacy values
+   * from before the link existed. Deleting a course detaches the student.
+   */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  courseId!: string | null
+
+  @ManyToOne(() => Course, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'courseId' })
+  courseRef?: Course | null
+
+  @Column({ type: 'varchar', length: 120, default: '' })
   course!: string
 
   /** TOPIK level label (e.g. "TOPIK 3") — free text chosen in the admin form. */

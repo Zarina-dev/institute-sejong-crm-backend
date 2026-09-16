@@ -1,19 +1,67 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit, UnauthorizedException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcryptjs'
-import { Repository } from 'typeorm'
+import { ILike, IsNull, Not, Repository } from 'typeorm'
 
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateStudentDto } from './dto/create-student.dto'
+import { Course } from '../courses/entities/course.entity'
 import { UpdateStudentDto } from './dto/update-student.dto'
 import { Student } from './entities/student.entity'
 
 @Injectable()
-export class StudentsService {
+export class StudentsService implements OnModuleInit {
+  private readonly logger = new Logger(StudentsService.name)
+
   constructor(
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
   ) {}
+
+  /** Idempotent backfill: link students whose free-text `course` equals a course title. */
+  async onModuleInit() {
+    const detached = await this.studentRepository.find({ where: { courseId: IsNull(), course: Not('') } })
+
+    if (detached.length === 0) {
+      return
+    }
+
+    let linked = 0
+
+    for (const student of detached) {
+      const course = await this.courseRepository.findOne({ where: { title: ILike(student.course.trim()) } })
+
+      if (course) {
+        student.courseId = course.id
+        student.course = course.title
+        await this.studentRepository.save(student)
+        linked += 1
+      }
+    }
+
+    this.logger.log(`Linked ${linked}/${detached.length} legacy students to courses by title.`)
+  }
+
+  /** `courseId` → `{ courseId, course }` with the label copied from the record; null clears both. */
+  private async courseFields(courseId: string | null | undefined) {
+    if (courseId === undefined) {
+      return {}
+    }
+
+    if (courseId === null) {
+      return { courseId: null, course: '' }
+    }
+
+    const course = await this.courseRepository.findOne({ where: { id: courseId } })
+
+    if (!course) {
+      throw new BadRequestException('errors.course.notFound')
+    }
+
+    return { courseId: course.id, course: course.title }
+  }
 
   /** Admin listing — includes password and notes by design (admin-only screen). */
   listStudents() {
@@ -41,6 +89,8 @@ export class StudentsService {
 
     const student = this.studentRepository.create({
       ...dto,
+      course: dto.course ?? '',
+      ...(await this.courseFields(dto.courseId)),
       studentId,
       password: dto.password?.trim() || this.generatePassword(studentId),
       status: dto.status ?? 'active',
@@ -81,6 +131,7 @@ export class StudentsService {
 
     Object.assign(student, {
       ...rest,
+      ...(await this.courseFields(dto.courseId)),
       ...(nextStudentId ? { studentId: nextStudentId } : {}),
       ...(password?.trim() ? { password: password.trim() } : {}),
       ...(dto.notes !== undefined ? { notes: dto.notes?.trim() || null } : {}),
