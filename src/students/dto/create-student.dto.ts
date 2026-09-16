@@ -31,6 +31,11 @@ export class TopikFileDto {
   @IsString()
   @MaxLength(120)
   type!: string
+
+  /** Only files that went through `POST /uploads/documents` are accepted. */
+  @IsOptional()
+  @Matches(/^\/uploads\/documents\/[\w.-]+$/, { message: 'validation.staff.photoInvalid' })
+  url?: string
 }
 
 export class CreateStudentDto {

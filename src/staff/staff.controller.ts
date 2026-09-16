@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto'
+import { CreateStaffDto, ReorderStaffDto, UpdateStaffDto } from './dto/staff.dto'
 import { StaffService } from './staff.service'
 
 @Controller('staff')
@@ -21,6 +21,12 @@ export class StaffController {
   @Post()
   create(@Body() body: CreateStaffDto) {
     return this.staffService.create(body)
+  }
+
+  /** Declared before `:id` so 'order' is not parsed as a UUID. */
+  @Patch('order')
+  reorder(@Body() body: ReorderStaffDto) {
+    return this.staffService.reorder(body.ids)
   }
 
   @Patch(':id')

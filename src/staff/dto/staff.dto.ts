@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsEmail, IsInt, IsOptional, IsString, IsUUID, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
 
 export class CreateStaffDto {
   @IsString()
@@ -41,3 +41,10 @@ export class CreateStaffDto {
 }
 
 export class UpdateStaffDto extends PartialType(CreateStaffDto) {}
+
+export class ReorderStaffDto {
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @IsUUID('4', { each: true })
+  ids!: string[]
+}

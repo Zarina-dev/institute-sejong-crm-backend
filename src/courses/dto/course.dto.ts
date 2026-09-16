@@ -17,6 +17,7 @@ import {
   Min,
   MinLength,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator'
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -129,14 +130,17 @@ export class CreateApplicationDto {
   @IsUUID()
   courseId!: string
 
+  /** Contact details are required for guests; a signed-in student's come from the student record. */
+  @ValidateIf((dto: CreateApplicationDto) => !dto.studentId)
   @IsString()
   @MinLength(1, { message: 'validation.application.nameRequired' })
   @MaxLength(120)
-  applicantName!: string
+  applicantName?: string
 
+  @ValidateIf((dto: CreateApplicationDto) => !dto.studentId)
   @IsEmail({}, { message: 'validation.application.emailInvalid' })
   @MaxLength(120)
-  applicantEmail!: string
+  applicantEmail?: string
 
   @IsOptional()
   @IsString()

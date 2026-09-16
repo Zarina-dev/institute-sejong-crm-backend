@@ -127,8 +127,19 @@ export class CoursesService {
       }
     }
 
+    // A signed-in student's contact details come from their record, so an
+    // outdated e-mail on the student never blocks the application itself.
+    const student = dto.studentId ? await this.studentRepository.findOne({ where: { id: dto.studentId } }) : null
+
+    if (dto.studentId && !student) {
+      throw new NotFoundException('errors.student.notFound')
+    }
+
     const application = this.applicationRepository.create({
       ...dto,
+      applicantName: dto.applicantName?.trim() || student?.name || '',
+      applicantEmail: dto.applicantEmail?.trim() || student?.email || '',
+      phone: dto.phone ?? student?.phone ?? null,
       status: 'pending',
       studentId: dto.studentId ?? null,
       documents: dto.documents ?? [],

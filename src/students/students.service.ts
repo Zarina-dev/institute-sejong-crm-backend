@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import * as bcrypt from 'bcryptjs'
 import { Repository } from 'typeorm'
 
+import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateStudentDto } from './dto/create-student.dto'
 import { UpdateStudentDto } from './dto/update-student.dto'
 import { Student } from './entities/student.entity'
@@ -67,6 +68,10 @@ export class StudentsService {
     // An empty password field in the edit form means "keep the current one".
     const { password, ...rest } = dto
 
+    // Files dropped from the list must not linger on disk.
+    const keptUrls = new Set((dto.topikFiles ?? student.topikFiles ?? []).map((file) => file.url))
+    const removedFiles = dto.topikFiles ? (student.topikFiles ?? []).filter((file) => file.url && !keptUrls.has(file.url)) : []
+
     Object.assign(student, {
       ...rest,
       ...(nextStudentId ? { studentId: nextStudentId } : {}),
@@ -74,7 +79,10 @@ export class StudentsService {
       ...(dto.notes !== undefined ? { notes: dto.notes?.trim() || null } : {}),
     })
 
-    return this.studentRepository.save(student)
+    const saved = await this.studentRepository.save(student)
+    await Promise.all(removedFiles.map((file) => removeUploadedFile(file.url)))
+
+    return saved
   }
 
   async deleteStudent(id: string) {
@@ -85,6 +93,7 @@ export class StudentsService {
     }
 
     await this.studentRepository.remove(student)
+    await Promise.all((student.topikFiles ?? []).map((file) => removeUploadedFile(file.url)))
     return { success: true }
   }
 

@@ -1,17 +1,13 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { unlink } from 'fs/promises'
-import { basename, join } from 'path'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 
-import { IMAGES_DIR } from '../uploads/uploads.controller'
+import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto'
 import { StaffMember } from './entities/staff-member.entity'
 
 @Injectable()
 export class StaffService {
-  private readonly logger = new Logger(StaffService.name)
-
   constructor(
     @InjectRepository(StaffMember)
     private readonly staffRepository: Repository<StaffMember>,
@@ -62,7 +58,7 @@ export class StaffService {
 
     // A replaced or cleared photo should not linger on disk.
     if (dto.photoUrl !== undefined && previousPhoto && previousPhoto !== saved.photoUrl) {
-      await this.removePhotoFile(previousPhoto)
+      await removeUploadedFile(previousPhoto)
     }
 
     return saved
@@ -73,20 +69,28 @@ export class StaffService {
     await this.staffRepository.remove(member)
 
     if (member.photoUrl) {
-      await this.removePhotoFile(member.photoUrl)
+      await removeUploadedFile(member.photoUrl)
     }
 
     return { success: true }
   }
 
-  /** Best-effort: the row change already succeeded, so a failed unlink is only logged. */
-  private async removePhotoFile(photoUrl: string) {
-    const file = join(IMAGES_DIR, basename(photoUrl))
+  /**
+   * Drag-and-drop ordering: `ids` is the full list in its new order. Members
+   * not mentioned keep their number, so a stale client can't hide anyone.
+   */
+  async reorder(ids: string[]) {
+    const members = await this.staffRepository.find({ where: { id: In(ids) } })
+    const byId = new Map(members.map((member) => [member.id, member]))
 
-    await unlink(file).catch((error: NodeJS.ErrnoException) => {
-      if (error.code !== 'ENOENT') {
-        this.logger.warn(`Could not remove photo ${file}: ${error.message}`)
+    ids.forEach((id, index) => {
+      const member = byId.get(id)
+      if (member) {
+        member.sortOrder = index
       }
     })
+
+    await this.staffRepository.save(members)
+    return this.listAll()
   }
 }

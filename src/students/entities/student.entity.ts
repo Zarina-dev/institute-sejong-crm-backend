@@ -7,6 +7,8 @@ export type TopikFile = {
   name: string
   size: number
   type: string
+  /** Site-relative `/uploads/documents/…` path. Absent on rows from before files were really stored. */
+  url?: string
 }
 
 @Entity('students')
