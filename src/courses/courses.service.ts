@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
+import { courseLabel } from './course-label'
 import { Course } from './entities/course.entity'
 import { CourseApplication } from './entities/course-application.entity'
 import { Enrollment } from './entities/enrollment.entity'
@@ -162,7 +163,7 @@ export class CoursesService {
 
       if (studentRecord) {
         studentRecord.courseId = course.id
-        studentRecord.course = course.title
+        studentRecord.course = courseLabel(course)
         await this.studentRepository.save(studentRecord)
       }
 
@@ -210,7 +211,8 @@ export class CoursesService {
 
     await this.enrollmentRepository.save(enrollment)
 
-    student.course = course.title
+    student.courseId = course.id
+    student.course = courseLabel(course)
     await this.studentRepository.save(student)
 
     return enrollment

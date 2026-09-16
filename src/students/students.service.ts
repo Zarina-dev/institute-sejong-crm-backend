@@ -5,6 +5,7 @@ import { ILike, IsNull, Not, Repository } from 'typeorm'
 
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateStudentDto } from './dto/create-student.dto'
+import { courseLabel } from '../courses/course-label'
 import { Course } from '../courses/entities/course.entity'
 import { UpdateStudentDto } from './dto/update-student.dto'
 import { Student } from './entities/student.entity'
@@ -20,8 +21,21 @@ export class StudentsService implements OnModuleInit {
     private readonly courseRepository: Repository<Course>,
   ) {}
 
-  /** Idempotent backfill: link students whose free-text `course` equals a course title. */
+  /**
+   * Idempotent backfill on boot: link students whose free-text `course`
+   * equals a course title, and refresh the label of already-linked students
+   * so it always reads "programme · class".
+   */
   async onModuleInit() {
+    const linkedStudents = await this.studentRepository.find({ where: { courseId: Not(IsNull()) }, relations: { courseRef: true } })
+
+    for (const student of linkedStudents) {
+      if (student.courseRef && student.course !== courseLabel(student.courseRef)) {
+        student.course = courseLabel(student.courseRef)
+        await this.studentRepository.save(student)
+      }
+    }
+
     const detached = await this.studentRepository.find({ where: { courseId: IsNull(), course: Not('') } })
 
     if (detached.length === 0) {
@@ -35,7 +49,7 @@ export class StudentsService implements OnModuleInit {
 
       if (course) {
         student.courseId = course.id
-        student.course = course.title
+        student.course = courseLabel(course)
         await this.studentRepository.save(student)
         linked += 1
       }
@@ -60,7 +74,7 @@ export class StudentsService implements OnModuleInit {
       throw new BadRequestException('errors.course.notFound')
     }
 
-    return { courseId: course.id, course: course.title }
+    return { courseId: course.id, course: courseLabel(course) }
   }
 
   /** Admin listing — includes password and notes by design (admin-only screen). */
