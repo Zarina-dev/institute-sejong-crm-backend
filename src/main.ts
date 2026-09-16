@@ -14,8 +14,10 @@ async function bootstrap() {
 
   // Uploaded images (news bodies, staff photos) are plain static files
   // outside the API prefix so <img src="/uploads/images/…"> just works.
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads/',
+  // Only that folder is public: learning materials and student documents
+  // live next to it but are served through authenticated API routes.
+  app.useStaticAssets(join(process.cwd(), 'uploads', 'images'), {
+    prefix: '/uploads/images/',
     maxAge: '7d',
     immutable: true,
   })
@@ -35,7 +37,7 @@ async function bootstrap() {
   app.enableCors({
     origin: true,
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept-Language'],
+    allowedHeaders: ['Content-Type', 'Accept-Language', 'Authorization'],
   })
 
   await app.listen(process.env.PORT || 3000)

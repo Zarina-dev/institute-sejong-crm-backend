@@ -52,12 +52,19 @@ export class StudentsService {
     return this.studentRepository.save(student)
   }
 
-  async updateStudent(id: string, dto: UpdateStudentDto) {
+  /** Full row by primary key (admin/internal use). */
+  async getStudentEntity(id: string) {
     const student = await this.studentRepository.findOne({ where: { id } })
 
     if (!student) {
       throw new NotFoundException('errors.student.notFound')
     }
+
+    return student
+  }
+
+  async updateStudent(id: string, dto: UpdateStudentDto) {
+    const student = await this.getStudentEntity(id)
 
     const nextStudentId = dto.studentId?.trim()
 
