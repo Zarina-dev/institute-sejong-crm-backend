@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { sanitizeRichText } from '../common/sanitize'
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto'
 import { NewsPost } from './entities/news-post.entity'
 
@@ -39,6 +40,7 @@ export class NewsService {
   create(dto: CreateNewsDto) {
     const post = this.newsRepository.create({
       ...dto,
+      body: sanitizeRichText(dto.body),
       category: dto.category ?? 'campus',
       isPublished: dto.isPublished ?? false,
       isFeatured: dto.isFeatured ?? false,
@@ -52,7 +54,7 @@ export class NewsService {
     const post = await this.getById(id)
     const becomesPublished = dto.isPublished === true && !post.isPublished
 
-    Object.assign(post, dto)
+    Object.assign(post, dto, dto.body !== undefined ? { body: sanitizeRichText(dto.body) } : {})
 
     // The publish date is the first time the post went live, not every edit.
     if (becomesPublished && !post.publishedAt) {

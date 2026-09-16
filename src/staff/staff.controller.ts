@@ -1,0 +1,35 @@
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
+
+import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto'
+import { StaffService } from './staff.service'
+
+@Controller('staff')
+export class StaffController {
+  constructor(private readonly staffService: StaffService) {}
+
+  /** `GET /staff` — published members (public). `?all=true` for the admin page. */
+  @Get()
+  list(@Query('all') all?: string) {
+    return all === 'true' ? this.staffService.listAll() : this.staffService.listPublished()
+  }
+
+  @Get(':id')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.staffService.getById(id)
+  }
+
+  @Post()
+  create(@Body() body: CreateStaffDto) {
+    return this.staffService.create(body)
+  }
+
+  @Patch(':id')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateStaffDto) {
+    return this.staffService.update(id, body)
+  }
+
+  @Delete(':id')
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.staffService.remove(id)
+  }
+}

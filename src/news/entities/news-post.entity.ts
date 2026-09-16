@@ -12,8 +12,12 @@ export class NewsPost {
   @Column({ type: 'varchar', length: 255 })
   title!: string
 
+  /** Sanitized HTML from the admin editor. */
   @Column({ type: 'text' })
   body!: string
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  coverImage!: string | null
 
   @Column({ type: 'varchar', length: 40, default: 'campus' })
   category!: NewsCategory

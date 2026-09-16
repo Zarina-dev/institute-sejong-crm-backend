@@ -6,7 +6,9 @@ import { CoursesModule } from './courses/courses.module'
 import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
 import { NewsModule } from './news/news.module'
+import { StaffModule } from './staff/staff.module'
 import { StudentsModule } from './students/students.module'
+import { UploadsModule } from './uploads/uploads.module'
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { StudentsModule } from './students/students.module'
     StudentsModule,
     CoursesModule,
     NewsModule,
+    StaffModule,
+    UploadsModule,
   ],
   controllers: [HealthController],
 })

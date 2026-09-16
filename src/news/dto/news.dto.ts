@@ -4,14 +4,21 @@ import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'cla
 export const NEWS_CATEGORIES = ['academic', 'events', 'campus', 'admissions'] as const
 
 export class CreateNewsDto {
+  /** Optional cover image (site-relative /uploads/images/… URL). */
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  coverImage?: string | null
+
   @IsString()
   @MinLength(1, { message: 'validation.news.titleRequired' })
   @MaxLength(255)
   title!: string
 
+  /** Rich text (HTML from the editor); sanitized server-side before saving. */
   @IsString()
   @MinLength(1, { message: 'validation.news.bodyRequired' })
-  @MaxLength(20000)
+  @MaxLength(200000)
   body!: string
 
   @IsOptional()

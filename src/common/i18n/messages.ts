@@ -38,6 +38,13 @@ const en = {
   'validation.schedule.timeInvalid': 'Use HH:mm for times.',
   'validation.schedule.endBeforeStart': 'End time must be after start time.',
 
+  // ---- validation: images / staff
+  'validation.image.required': 'Choose an image file.',
+  'validation.image.type': 'Unsupported image format. Allowed: {allowed}',
+  'validation.staff.nameRequired': "Enter the staff member's name.",
+  'validation.staff.positionRequired': 'Enter a position.',
+  'validation.staff.photoInvalid': 'Upload the photo through the site first.',
+
   // ---- domain errors
   'errors.student.idTaken': 'This student ID is already in use.',
   'errors.student.notFound': 'Student not found.',
@@ -50,6 +57,7 @@ const en = {
   'errors.material.notFound': 'Material not found.',
   'errors.material.notAvailable': 'This material is not available.',
   'errors.news.notFound': 'Announcement not found.',
+  'errors.staff.notFound': 'Staff member not found.',
   'errors.fileTooLarge': 'The file is too large. Maximum is {max}.',
 } as const
 
@@ -78,6 +86,11 @@ const ru: Dictionary = {
   'validation.news.bodyRequired': 'Введите текст объявления.',
   'validation.schedule.timeInvalid': 'Время в формате ЧЧ:ММ.',
   'validation.schedule.endBeforeStart': 'Время окончания должно быть позже начала.',
+  'validation.image.required': 'Выберите изображение.',
+  'validation.image.type': 'Формат изображения не поддерживается. Разрешено: {allowed}',
+  'validation.staff.nameRequired': 'Введите имя сотрудника.',
+  'validation.staff.positionRequired': 'Введите должность.',
+  'validation.staff.photoInvalid': 'Сначала загрузите фото через сайт.',
   'errors.student.idTaken': 'Этот ID студента уже занят.',
   'errors.student.notFound': 'Студент не найден.',
   'errors.student.inactive': 'Неактивные студенты не могут войти.',
@@ -89,6 +102,7 @@ const ru: Dictionary = {
   'errors.material.notFound': 'Материал не найден.',
   'errors.material.notAvailable': 'Материал недоступен.',
   'errors.news.notFound': 'Объявление не найдено.',
+  'errors.staff.notFound': 'Сотрудник не найден.',
   'errors.fileTooLarge': 'Файл слишком большой. Максимум — {max}.',
 }
 
@@ -114,6 +128,11 @@ const ko: Dictionary = {
   'validation.news.bodyRequired': '공지 내용을 입력하세요.',
   'validation.schedule.timeInvalid': '시간은 HH:mm 형식으로 입력하세요.',
   'validation.schedule.endBeforeStart': '종료 시간은 시작 시간 이후여야 합니다.',
+  'validation.image.required': '이미지 파일을 선택하세요.',
+  'validation.image.type': '지원하지 않는 이미지 형식입니다. 허용: {allowed}',
+  'validation.staff.nameRequired': '교직원 이름을 입력하세요.',
+  'validation.staff.positionRequired': '직책을 입력하세요.',
+  'validation.staff.photoInvalid': '사진은 사이트를 통해 먼저 업로드해야 합니다.',
   'errors.student.idTaken': '이미 사용 중인 학생 ID입니다.',
   'errors.student.notFound': '학생을 찾을 수 없습니다.',
   'errors.student.inactive': '비활동 상태의 학생은 사이트에 접속할 수 없습니다.',
@@ -125,6 +144,7 @@ const ko: Dictionary = {
   'errors.material.notFound': '자료를 찾을 수 없습니다.',
   'errors.material.notAvailable': '이용할 수 없는 자료입니다.',
   'errors.news.notFound': '공지를 찾을 수 없습니다.',
+  'errors.staff.notFound': '교직원을 찾을 수 없습니다.',
   'errors.fileTooLarge': '파일이 너무 큽니다. 최대 {max}까지 가능합니다.',
 }
 
@@ -150,6 +170,11 @@ const ky: Dictionary = {
   'validation.news.bodyRequired': 'Билдирүүнүн текстин киргизиңиз.',
   'validation.schedule.timeInvalid': 'Убакытты СС:ММ форматында киргизиңиз.',
   'validation.schedule.endBeforeStart': 'Аяктоо убактысы башталуудан кийин болушу керек.',
+  'validation.image.required': 'Сүрөт файлын тандаңыз.',
+  'validation.image.type': 'Сүрөт форматы колдоого алынбайт. Уруксат берилген: {allowed}',
+  'validation.staff.nameRequired': 'Кызматкердин атын киргизиңиз.',
+  'validation.staff.positionRequired': 'Кызмат ордун киргизиңиз.',
+  'validation.staff.photoInvalid': 'Сүрөттү адегенде сайт аркылуу жүктөңүз.',
   'errors.student.idTaken': 'Бул студент ID мурунтан колдонулууда.',
   'errors.student.notFound': 'Студент табылган жок.',
   'errors.student.inactive': 'Активдүү эмес студенттер кире албайт.',
@@ -161,6 +186,7 @@ const ky: Dictionary = {
   'errors.material.notFound': 'Материал табылган жок.',
   'errors.material.notAvailable': 'Бул материал жеткиликсиз.',
   'errors.news.notFound': 'Билдирүү табылган жок.',
+  'errors.staff.notFound': 'Кызматкер табылган жок.',
   'errors.fileTooLarge': 'Файл өтө чоң. Максимум — {max}.',
 }
 
