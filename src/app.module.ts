@@ -3,7 +3,9 @@ import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { AuthModule } from './auth/auth.module'
+import { ContentModule } from './content/content.module'
 import { CoursesModule } from './courses/courses.module'
+import { GalleryModule } from './gallery/gallery.module'
 import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
 import { NewsModule } from './news/news.module'
@@ -35,6 +37,8 @@ import { UploadsModule } from './uploads/uploads.module'
     AuthModule,
     MaterialsModule,
     CoursesModule,
+    ContentModule,
+    GalleryModule,
     NewsModule,
     StaffModule,
     UploadsModule,

@@ -42,6 +42,10 @@ const en = {
   'errors.material.notFound': 'Material not found.',
   'errors.material.notAvailable': 'This material is not available.',
   'errors.news.notFound': 'Announcement not found.',
+  'validation.album.titleRequired': 'Enter an album title.',
+  'validation.album.urlInvalid': 'Enter a full link starting with https://',
+  'validation.album.dateInvalid': 'Use YYYY-MM-DD for the date.',
+  'errors.album.notFound': 'Album not found.',
   'errors.staff.notFound': 'Staff member not found.',
   'errors.fileTooLarge': 'The file is too large. Maximum is {max}.',
 } as const
@@ -72,6 +76,10 @@ const ru: Dictionary = {
   'errors.material.notFound': 'Материал не найден.',
   'errors.material.notAvailable': 'Материал недоступен.',
   'errors.news.notFound': 'Объявление не найдено.',
+  'validation.album.titleRequired': 'Введите название альбома.',
+  'validation.album.urlInvalid': 'Укажите полную ссылку, начиная с https://',
+  'validation.album.dateInvalid': 'Дата в формате ГГГГ-ММ-ДД.',
+  'errors.album.notFound': 'Альбом не найден.',
   'errors.staff.notFound': 'Сотрудник не найден.',
   'errors.fileTooLarge': 'Файл слишком большой. Максимум — {max}.',
 }
@@ -99,6 +107,10 @@ const ko: Dictionary = {
   'errors.material.notFound': '자료를 찾을 수 없습니다.',
   'errors.material.notAvailable': '이용할 수 없는 자료입니다.',
   'errors.news.notFound': '공지를 찾을 수 없습니다.',
+  'validation.album.titleRequired': '사진첩 제목을 입력하세요.',
+  'validation.album.urlInvalid': 'https:// 로 시작하는 전체 링크를 입력하세요.',
+  'validation.album.dateInvalid': '날짜는 YYYY-MM-DD 형식으로 입력하세요.',
+  'errors.album.notFound': '사진첩을 찾을 수 없습니다.',
   'errors.staff.notFound': '교직원을 찾을 수 없습니다.',
   'errors.fileTooLarge': '파일이 너무 큽니다. 최대 {max}까지 가능합니다.',
 }
@@ -126,6 +138,10 @@ const ky: Dictionary = {
   'errors.material.notFound': 'Материал табылган жок.',
   'errors.material.notAvailable': 'Бул материал жеткиликсиз.',
   'errors.news.notFound': 'Билдирүү табылган жок.',
+  'validation.album.titleRequired': 'Альбомдун аталышын киргизиңиз.',
+  'validation.album.urlInvalid': 'https:// менен башталган толук шилтемени киргизиңиз.',
+  'validation.album.dateInvalid': 'Күн YYYY-MM-DD форматында болушу керек.',
+  'errors.album.notFound': 'Альбом табылган жок.',
   'errors.staff.notFound': 'Кызматкер табылган жок.',
   'errors.fileTooLarge': 'Файл өтө чоң. Максимум — {max}.',
 }

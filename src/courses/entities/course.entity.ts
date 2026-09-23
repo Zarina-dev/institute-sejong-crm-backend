@@ -8,6 +8,8 @@ export type CourseSession = {
   classroom?: string | null
 }
 
+export type CourseCategory = 'language' | 'culture'
+
 @Entity('courses')
 export class Course {
   @PrimaryGeneratedColumn('uuid')
@@ -21,6 +23,10 @@ export class Course {
 
   @Column({ type: 'varchar', length: 120 })
   subject!: string
+
+  /** 강좌 안내 (language) vs 문화 강좌 (culture) — the two 교육과정 menu items. */
+  @Column({ type: 'varchar', length: 20, default: 'language' })
+  category!: CourseCategory
 
   @Column({ type: 'varchar', length: 120, nullable: true })
   level!: string | null

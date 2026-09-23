@@ -4,6 +4,8 @@ import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsOptional
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
+export const COURSE_CATEGORIES = ['language', 'culture'] as const
+
 export class CourseSessionDto {
   @IsInt()
   @Min(1)
@@ -37,6 +39,10 @@ export class CreateCourseDto {
   @MinLength(1, { message: 'validation.course.subjectRequired' })
   @MaxLength(120)
   subject!: string
+
+  @IsOptional()
+  @IsIn(COURSE_CATEGORIES)
+  category?: (typeof COURSE_CATEGORIES)[number]
 
   @IsOptional()
   @IsString()

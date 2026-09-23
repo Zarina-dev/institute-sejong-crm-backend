@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
-export type NewsCategory = 'academic' | 'events' | 'campus' | 'admissions'
+export type NewsCategory = 'academic' | 'events' | 'campus' | 'admissions' | 'press'
 
 /** A public announcement. The public list shows published posts only. */
 @Entity('news_posts')

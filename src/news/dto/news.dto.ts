@@ -1,7 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
 
-export const NEWS_CATEGORIES = ['academic', 'events', 'campus', 'admissions'] as const
+export const NEWS_CATEGORIES = ['academic', 'events', 'campus', 'admissions', 'press'] as const
 
 export class CreateNewsDto {
   /** Optional cover image (site-relative /uploads/images/… URL). */
