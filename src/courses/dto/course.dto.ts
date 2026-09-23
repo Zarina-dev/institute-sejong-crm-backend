@@ -72,13 +72,12 @@ export class CreateCourseDto {
   @MaxLength(120)
   courseCode?: string | null
 
-  @IsOptional()
-  @IsDateString()
-  startDate?: string | null
+  /** A class always runs between two dates; the timetable is unrolled from them. */
+  @IsDateString({}, { message: 'validation.course.startDateRequired' })
+  startDate!: string
 
-  @IsOptional()
-  @IsDateString()
-  endDate?: string | null
+  @IsDateString({}, { message: 'validation.course.endDateRequired' })
+  endDate!: string
 
   @IsOptional()
   @IsInt()

@@ -34,6 +34,7 @@ export class CoursesService {
 
   createCourse(dto: CreateCourseDto) {
     this.assertSessions(dto.sessions)
+    this.assertPeriod(dto.startDate, dto.endDate)
 
     const course = this.courseRepository.create({
       ...dto,
@@ -48,6 +49,7 @@ export class CoursesService {
   async updateCourse(id: string, dto: UpdateCourseDto) {
     this.assertSessions(dto.sessions)
     const course = await this.getCourseById(id)
+    this.assertPeriod(dto.startDate ?? course.startDate, dto.endDate ?? course.endDate)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
     return this.courseRepository.save(course)
@@ -63,6 +65,13 @@ export class CoursesService {
     const course = await this.getCourseById(id)
     course.isPublished = isPublished
     return this.courseRepository.save(course)
+  }
+
+  /** ISO dates compare correctly as text, like the HH:mm times below. */
+  private assertPeriod(startDate?: string | null, endDate?: string | null) {
+    if (startDate && endDate && endDate < startDate) {
+      throw new BadRequestException('validation.course.endBeforeStart')
+    }
   }
 
   /** HH:mm strings compare correctly as text. */
