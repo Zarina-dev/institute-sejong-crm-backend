@@ -1,3 +1,4 @@
+import { Authenticated } from '../auth/auth.guard'
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto'
@@ -28,26 +29,31 @@ export class NewsController {
   }
 
   @Post()
+  @Authenticated('admin')
   create(@Body() body: CreateNewsDto) {
     return this.newsService.create(body)
   }
 
   @Patch(':id')
+  @Authenticated('admin')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateNewsDto) {
     return this.newsService.update(id, body)
   }
 
   @Post(':id/publish')
+  @Authenticated('admin')
   publish(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.setPublished(id, true)
   }
 
   @Post(':id/unpublish')
+  @Authenticated('admin')
   unpublish(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.setPublished(id, false)
   }
 
   @Delete(':id')
+  @Authenticated('admin')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.remove(id)
   }

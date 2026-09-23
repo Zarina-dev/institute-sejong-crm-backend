@@ -1,16 +1,11 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { createHmac, timingSafeEqual } from 'crypto'
 
-import { StudentsService } from '../students/students.service'
-
-export type AuthRole = 'admin' | 'student'
+export type AuthRole = 'admin'
 
 export type AuthUser = {
   role: AuthRole
-  /** Admin username or the student's login id. */
   username: string
-  /** Student row id; absent for the admin. */
-  studentId?: string
   /** Unix seconds. */
   exp: number
 }
@@ -31,7 +26,7 @@ export class AuthService {
   private readonly adminUsername = process.env.ADMIN_USERNAME || 'admin'
   private readonly adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
 
-  constructor(private readonly studentsService: StudentsService) {
+  constructor() {
     this.secret = process.env.AUTH_SECRET || DEV_SECRET
 
     if (this.secret === DEV_SECRET) {
@@ -39,23 +34,13 @@ export class AuthService {
     }
   }
 
-  /** Admin first (env credentials), then students (database). */
-  async login(username: string, password: string) {
-    if (username === this.adminUsername) {
-      if (!this.safeEqual(password, this.adminPassword)) {
-        throw new UnauthorizedException('errors.login.invalid')
-      }
-
-      return { role: 'admin' as const, token: this.sign({ role: 'admin', username }), student: null }
+  /** The site has one account: the administrator, from the environment. */
+  login(username: string, password: string) {
+    if (username !== this.adminUsername || !this.safeEqual(password, this.adminPassword)) {
+      throw new UnauthorizedException('errors.login.invalid')
     }
 
-    const { student } = await this.studentsService.login(username, password)
-
-    return {
-      role: 'student' as const,
-      token: this.sign({ role: 'student', username: student.studentId, studentId: student.id }),
-      student,
-    }
+    return { role: 'admin' as const, token: this.sign({ role: 'admin', username }) }
   }
 
   sign(payload: Omit<AuthUser, 'exp'>): string {

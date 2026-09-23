@@ -23,11 +23,12 @@ import { MaterialsService, type MaterialsQuery } from './materials.service'
 import { materialUploadOptions } from './upload.config'
 
 /**
- * Learning materials are for enrolled students and staff only — nothing here
- * is public. Reading needs any signed-in user; writing needs the admin.
+ * Learning materials are the institute's internal archive: nothing here is
+ * public, and the administrator is the only account, so every route —
+ * including the download — requires the admin.
  */
 @Controller('materials')
-@Authenticated()
+@Authenticated('admin')
 export class MaterialsController {
   constructor(private readonly materialsService: MaterialsService) {}
 
@@ -53,32 +54,27 @@ export class MaterialsController {
   }
 
   @Post()
-  @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', materialUploadOptions))
   create(@Body() body: CreateMaterialDto, @UploadedFile() file?: Express.Multer.File) {
     return this.materialsService.createMaterial(body, file)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateMaterialDto) {
     return this.materialsService.updateMaterial(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.deleteMaterial(id)
   }
 
   @Post(':id/publish')
-  @Authenticated('admin')
   publish(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.setPublished(id, true)
   }
 
   @Post(':id/unpublish')
-  @Authenticated('admin')
   unpublish(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.setPublished(id, false)
   }

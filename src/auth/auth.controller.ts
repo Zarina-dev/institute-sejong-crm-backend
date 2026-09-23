@@ -8,7 +8,7 @@ import { LoginDto } from './dto/login.dto'
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  /** `{ role, token, student }` — the same endpoint for the admin and for students. */
+  /** { role, token } for the administrator; there is no other account. */
   @Post('login')
   login(@Body() body: LoginDto) {
     return this.authService.login(body.username.trim(), body.password)
@@ -18,6 +18,6 @@ export class AuthController {
   @Get('me')
   @Authenticated()
   me(@CurrentUser() user: AuthUser) {
-    return { role: user.role, username: user.username, studentId: user.studentId ?? null, exp: user.exp }
+    return { role: user.role, username: user.username, exp: user.exp }
   }
 }

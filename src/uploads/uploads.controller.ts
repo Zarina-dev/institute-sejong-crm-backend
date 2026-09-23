@@ -6,21 +6,16 @@ import { mkdirSync } from 'fs'
 import { diskStorage } from 'multer'
 import { extname } from 'path'
 
+import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
 
 export const IMAGES_DIR = './uploads/images'
-export const DOCUMENTS_DIR = './uploads/documents'
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'] as const
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/
 
-/** TOPIK certificates and similar: scans or PDFs. */
-const DOCUMENT_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'] as const
-const DOCUMENT_MIME = /^(application\/pdf|image\/(jpeg|png|webp))$/
-
 mkdirSync(IMAGES_DIR, { recursive: true })
-mkdirSync(DOCUMENTS_DIR, { recursive: true })
 
 /**
  * Disk storage with a random file name and a double check on the type:
@@ -48,10 +43,9 @@ function uploadOptions(dir: string, extensions: readonly string[], mime: RegExp)
 }
 
 const imageUploadOptions = uploadOptions(IMAGES_DIR, IMAGE_EXTENSIONS, IMAGE_MIME)
-const documentUploadOptions = uploadOptions(DOCUMENTS_DIR, DOCUMENT_EXTENSIONS, DOCUMENT_MIME)
 
 /**
- * Generic file intake. Each route answers `{ url, name, size, type }` where
+ * Image intake. The route answers `{ url, name, size, type }` where
  * `url` is site-relative (`/uploads/<kind>/<uuid>.<ext>`) — files are served
  * statically from `/uploads/…` (see main.ts), outside the `/api` prefix. The
  * caller stores the returned path on its own record; the owning service is
@@ -61,16 +55,10 @@ const documentUploadOptions = uploadOptions(DOCUMENTS_DIR, DOCUMENT_EXTENSIONS, 
 export class UploadsController {
   /** Rich-text images, news covers, staff photos. */
   @Post('images')
+  @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/images')
-  }
-
-  /** Student documents (TOPIK certificates). */
-  @Post('documents')
-  @UseInterceptors(FileInterceptor('file', documentUploadOptions))
-  uploadDocument(@UploadedFile() file?: Express.Multer.File) {
-    return this.describe(file, '/uploads/documents')
   }
 
   private describe(file: Express.Multer.File | undefined, prefix: string) {
