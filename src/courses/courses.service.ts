@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
+import { weeklyHoursFromSessions } from './session-hours'
 import { Course } from './entities/course.entity'
 
 @Injectable()
@@ -41,6 +42,8 @@ export class CoursesService {
       level: dto.level ?? null,
       capacity: dto.capacity ?? 0,
       isPublished: dto.isPublished ?? false,
+      // 주 시간 defaults to what the weekly pattern adds up to.
+      weeklyHours: dto.weeklyHours ?? weeklyHoursFromSessions(dto.sessions),
     })
 
     return this.courseRepository.save(course)
@@ -52,6 +55,12 @@ export class CoursesService {
     this.assertPeriod(dto.startDate ?? course.startDate, dto.endDate ?? course.endDate)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
+
+    // Sessions changed and the admin did not type a figure: recompute.
+    if (dto.weeklyHours === undefined && dto.sessions) {
+      course.weeklyHours = weeklyHoursFromSessions(dto.sessions)
+    }
+
     return this.courseRepository.save(course)
   }
 

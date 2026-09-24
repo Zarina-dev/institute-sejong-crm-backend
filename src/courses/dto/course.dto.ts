@@ -1,6 +1,23 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { Type } from 'class-transformer'
-import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator'
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -83,6 +100,37 @@ export class CreateCourseDto {
   @IsInt()
   @Min(0)
   capacity?: number
+
+  /* ---- Semester table (학사 일정) ------------------------------------- */
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsInt()
+  @Min(0)
+  @Max(999)
+  expectedStudents?: number | null
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsInt()
+  @Min(0)
+  @Max(999)
+  actualStudents?: number | null
+
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(0)
+  @Max(9999)
+  totalHours?: number | null
+
+  /** Left out or null → derived from `sessions`. */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(0)
+  @Max(168)
+  weeklyHours?: number | null
 
   @IsOptional()
   @IsBoolean()

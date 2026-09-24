@@ -59,6 +59,28 @@ export class Course {
   @Column({ type: 'int', default: 0 })
   capacity!: number
 
+  /* ---- Semester table (학사 일정) ------------------------------------- */
+
+  /** 예상수 — how many learners the class was planned for. */
+  @Column({ type: 'int', nullable: true })
+  expectedStudents!: number | null
+
+  /** 실제수 — how many actually enrolled. */
+  @Column({ type: 'int', nullable: true })
+  actualStudents!: number | null
+
+  /** 총 시간수 — teaching hours over the whole semester. */
+  @Column({ type: 'real', nullable: true })
+  totalHours!: number | null
+
+  /**
+   * 주 시간 — weekly hours. Derived from `sessions` when the admin leaves it
+   * blank, but stored, because institutes count periods their own way and the
+   * office needs the number it reports, not ours.
+   */
+  @Column({ type: 'real', nullable: true })
+  weeklyHours!: number | null
+
   /** The public site lists published courses only — indexed for that filter. */
   @Index()
   @Column({ type: 'boolean', default: false })
