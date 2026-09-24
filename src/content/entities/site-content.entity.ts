@@ -3,10 +3,6 @@ import { Column, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 
 /** Editable blocks of the public site, keyed by slug. */
 export const CONTENT_SLUGS = [
   'about.greeting',
-  'about.location',
-  'programmes.courses',
-  'programmes.calendar',
-  'programmes.culture',
   'notices.faq',
   'resources.textbooks',
   'resources.links',
