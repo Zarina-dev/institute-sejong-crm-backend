@@ -10,6 +10,7 @@ import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
 import { NewsModule } from './news/news.module'
 import { StaffModule } from './staff/staff.module'
+import { TextbooksModule } from './textbooks/textbooks.module'
 import { UploadsModule } from './uploads/uploads.module'
 
 @Module({
@@ -41,6 +42,7 @@ import { UploadsModule } from './uploads/uploads.module'
     GalleryModule,
     NewsModule,
     StaffModule,
+    TextbooksModule,
     UploadsModule,
   ],
   controllers: [HealthController],

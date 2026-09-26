@@ -4,7 +4,6 @@ import { Column, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 
 export const CONTENT_SLUGS = [
   'about.greeting',
   'notices.faq',
-  'resources.textbooks',
   'resources.links',
   'history.intro',
 ] as const
