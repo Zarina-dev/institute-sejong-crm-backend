@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { In, Repository } from 'typeorm'
 
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateTextbookDto, UpdateTextbookDto } from './dto/textbook.dto'
@@ -60,6 +60,25 @@ export class TextbooksService {
     }
 
     return saved
+  }
+
+  /**
+   * Drag-and-drop ordering: `ids` is the full list in its new order. Rows not
+   * mentioned keep their number, so a stale client cannot reshuffle the rest.
+   */
+  async reorder(ids: string[]) {
+    const textbooks = await this.textbookRepository.find({ where: { id: In(ids) } })
+    const byId = new Map(textbooks.map((textbook) => [textbook.id, textbook]))
+
+    ids.forEach((id, index) => {
+      const textbook = byId.get(id)
+      if (textbook) {
+        textbook.sortOrder = index
+      }
+    })
+
+    await this.textbookRepository.save(textbooks)
+    return this.listAll()
   }
 
   async remove(id: string) {

@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { IsBoolean, IsInt, IsOptional, IsString, IsUrl, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsInt, IsOptional, IsString, IsUUID, IsUrl, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
 
 export class CreateTextbookDto {
   @IsString()
@@ -40,3 +40,10 @@ export class CreateTextbookDto {
 }
 
 export class UpdateTextbookDto extends PartialType(CreateTextbookDto) {}
+
+export class ReorderTextbooksDto {
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @IsUUID('4', { each: true })
+  ids!: string[]
+}

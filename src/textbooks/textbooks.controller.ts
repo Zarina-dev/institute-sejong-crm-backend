@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
 import { Authenticated } from '../auth/auth.guard'
-import { CreateTextbookDto, UpdateTextbookDto } from './dto/textbook.dto'
+import { CreateTextbookDto, ReorderTextbooksDto, UpdateTextbookDto } from './dto/textbook.dto'
 import { TextbooksService } from './textbooks.service'
 
 @Controller('textbooks')
@@ -23,6 +23,13 @@ export class TextbooksController {
   @Authenticated('admin')
   create(@Body() body: CreateTextbookDto) {
     return this.textbooksService.create(body)
+  }
+
+  /** Declared before `:id` so 'order' is not parsed as a UUID. */
+  @Patch('order')
+  @Authenticated('admin')
+  reorder(@Body() body: ReorderTextbooksDto) {
+    return this.textbooksService.reorder(body.ids)
   }
 
   @Patch(':id')
