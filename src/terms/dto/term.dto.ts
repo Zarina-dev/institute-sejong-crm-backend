@@ -1,6 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator'
 
+import { TERM_KINDS, type TermKind } from '../entities/term.entity'
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export class CreateTermDto {
@@ -9,8 +11,8 @@ export class CreateTermDto {
   @Max(2100)
   year!: number
 
-  @IsIn([1, 2], { message: 'validation.term.halfInvalid' })
-  half!: number
+  @IsIn(TERM_KINDS, { message: 'validation.term.kindInvalid' })
+  kind!: TermKind
 
   @IsOptional()
   @IsString()

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Not, Repository } from 'typeorm'
 
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto'
-import { AcademicTerm } from './entities/term.entity'
+import { AcademicTerm, type TermKind } from './entities/term.entity'
 
 @Injectable()
 export class TermsService {
@@ -12,9 +12,9 @@ export class TermsService {
     private readonly termRepository: Repository<AcademicTerm>,
   ) {}
 
-  /** Newest first — the semester in progress is the one people look for. */
+  /** Newest first, and within a year in the order they actually ran. */
   list() {
-    return this.termRepository.find({ order: { year: 'DESC', half: 'DESC' } })
+    return this.termRepository.find({ order: { startDate: 'DESC' } })
   }
 
   async getById(id: string) {
@@ -28,8 +28,8 @@ export class TermsService {
   }
 
   /**
-   * The semester a date falls in, by the institute's own dates. Returns null
-   * when no term covers it — the caller decides what that means.
+   * The term a date falls in, by the institute's own dates. Returns null when
+   * no term covers it — the caller decides what that means.
    */
   async codeForDate(date: string | null | undefined): Promise<string | null> {
     if (!date) {
@@ -42,8 +42,9 @@ export class TermsService {
 
   async create(dto: CreateTermDto) {
     this.assertPeriod(dto.startDate, dto.endDate)
-    const code = `${dto.year}-${dto.half}`
-    await this.assertUnique(code)
+
+    const code = await this.nextCode(dto.year, dto.kind)
+    await this.assertNoOverlap(dto.startDate, dto.endDate)
 
     const term = this.termRepository.create({ ...dto, code, name: dto.name ?? '' })
 
@@ -52,11 +53,21 @@ export class TermsService {
 
   async update(id: string, dto: UpdateTermDto) {
     const term = await this.getById(id)
-    this.assertPeriod(dto.startDate ?? term.startDate, dto.endDate ?? term.endDate)
+    const startDate = dto.startDate ?? term.startDate
+    const endDate = dto.endDate ?? term.endDate
+
+    this.assertPeriod(startDate, endDate)
+    await this.assertNoOverlap(startDate, endDate, id)
+
+    const movedSlot = (dto.year !== undefined && dto.year !== term.year) || (dto.kind !== undefined && dto.kind !== term.kind)
 
     Object.assign(term, dto)
-    term.code = `${term.year}-${term.half}`
-    await this.assertUnique(term.code, id)
+
+    // The code is the key classes already carry, so it only changes when the
+    // term is actually moved to another year or kind.
+    if (movedSlot) {
+      term.code = await this.nextCode(term.year, term.kind, id)
+    }
 
     return this.termRepository.save(term)
   }
@@ -67,20 +78,45 @@ export class TermsService {
     return { success: true }
   }
 
+  /**
+   * '2026-1' / '2026-2' for the semesters — one of each per year — and
+   * '2026-b1', '2026-b2' … for breaks, of which a year can have several.
+   */
+  private async nextCode(year: number, kind: TermKind, exceptId?: string) {
+    const ofYear = await this.termRepository.find({ where: exceptId ? { year, id: Not(exceptId) } : { year } })
+
+    if (kind !== 'break') {
+      const suffix = kind === 'first' ? '1' : '2'
+
+      if (ofYear.some((term) => term.kind === kind)) {
+        throw new BadRequestException('validation.term.duplicate')
+      }
+
+      return `${year}-${suffix}`
+    }
+
+    const breaks = ofYear.filter((term) => term.kind === 'break').length
+
+    return `${year}-b${breaks + 1}`
+  }
+
   private assertPeriod(startDate: string, endDate: string) {
     if (endDate < startDate) {
       throw new BadRequestException('validation.term.endBeforeStart')
     }
   }
 
-  /** One row per semester: 2026-1 cannot be defined twice. */
-  private async assertUnique(code: string, exceptId?: string) {
-    const clash = await this.termRepository.findOne({
-      where: exceptId ? { code, id: Not(exceptId) } : { code },
-    })
+  /**
+   * Terms are what a class's dates are matched against, so two of them may
+   * not cover the same day — the answer to "which term is this?" has to be
+   * a single one.
+   */
+  private async assertNoOverlap(startDate: string, endDate: string, exceptId?: string) {
+    const terms = await this.list()
+    const clash = terms.some((term) => term.id !== exceptId && term.startDate <= endDate && startDate <= term.endDate)
 
     if (clash) {
-      throw new BadRequestException('validation.term.duplicate')
+      throw new BadRequestException('validation.term.overlap')
     }
   }
 }
