@@ -72,6 +72,8 @@ const en = {
   "errors.term.notFound": "Semester not found.",
   "errors.competition.notFound": "Competition record not found.",
   "errors.meeting.notFound": "Meeting minutes not found.",
+  "validation.chronology.titleRequired": "Enter what happened.",
+  "errors.chronology.notFound": "Chronology entry not found.",
 } as const
 
 export type MessageKey = keyof typeof en
@@ -128,6 +130,8 @@ const ru: Dictionary = {
   "errors.term.notFound": "Семестр не найден.",
   "errors.competition.notFound": "Запись о конкурсе не найдена.",
   "errors.meeting.notFound": "Протокол не найден.",
+  "validation.chronology.titleRequired": "Опишите событие.",
+  "errors.chronology.notFound": "Запись хроники не найдена.",
 }
 
 const ko: Dictionary = {
@@ -181,6 +185,8 @@ const ko: Dictionary = {
   "errors.term.notFound": "학기를 찾을 수 없습니다.",
   "errors.competition.notFound": "대회 기록을 찾을 수 없습니다.",
   "errors.meeting.notFound": "회의록을 찾을 수 없습니다.",
+  "validation.chronology.titleRequired": "연혁 내용을 입력하세요.",
+  "errors.chronology.notFound": "연혁 항목을 찾을 수 없습니다.",
 }
 
 const ky: Dictionary = {
@@ -234,6 +240,8 @@ const ky: Dictionary = {
   "errors.term.notFound": "Семестр табылган жок.",
   "errors.competition.notFound": "Сынактын жазуусу табылган жок.",
   "errors.meeting.notFound": "Протокол табылган жок.",
+  "validation.chronology.titleRequired": "Окуяны жазыңыз.",
+  "errors.chronology.notFound": "Тарых жазуусу табылган жок.",
 }
 
 export const dictionaries: Record<Language, Dictionary> = { en, ru, ko, ky }

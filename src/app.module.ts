@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { AuthModule } from './auth/auth.module'
+import { ChronologyModule } from './chronology/chronology.module'
 import { CompetitionsModule } from './competitions/competitions.module'
 import { ContentModule } from './content/content.module'
 import { CoursesModule } from './courses/courses.module'
@@ -42,6 +43,7 @@ import { UploadsModule } from './uploads/uploads.module'
     MaterialsModule,
     CoursesModule,
     ContentModule,
+    ChronologyModule,
     CompetitionsModule,
     GalleryModule,
     NewsModule,
