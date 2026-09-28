@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { Type } from 'class-transformer'
-import { ArrayMaxSize, IsArray, IsInt, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator'
+import { ArrayMaxSize, IsArray, IsInt, IsOptional, IsString, Matches, MaxLength, Min, ValidateNested } from 'class-validator'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -23,10 +23,14 @@ export class MeetingAttachmentDto {
 }
 
 export class CreateMeetingDto {
+  /**
+   * Optional: minutes are named after the day they were written, so the
+   * admin does not type a subject. Older rows keep whatever they carry.
+   */
+  @IsOptional()
   @IsString()
-  @MinLength(1, { message: 'validation.meeting.titleRequired' })
   @MaxLength(255)
-  title!: string
+  title?: string
 
   @Matches(ISO_DATE, { message: 'validation.meeting.dateInvalid' })
   heldOn!: string

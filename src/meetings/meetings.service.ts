@@ -32,6 +32,7 @@ export class MeetingsService {
   create(dto: CreateMeetingDto) {
     const meeting = this.meetingRepository.create({
       ...dto,
+      title: dto.title ?? '',
       attendees: dto.attendees ?? '',
       body: sanitizeRichText(dto.body ?? ''),
       decisions: sanitizeRichText(dto.decisions ?? ''),
