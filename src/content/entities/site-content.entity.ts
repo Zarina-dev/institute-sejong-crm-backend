@@ -5,7 +5,6 @@ export const CONTENT_SLUGS = [
   'about.greeting',
   'notices.faq',
   'resources.links',
-  'history.intro',
 ] as const
 
 export type ContentSlug = (typeof CONTENT_SLUGS)[number]
