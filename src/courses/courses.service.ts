@@ -6,6 +6,30 @@ import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import { weeklyHoursFromSessions } from './session-hours'
 import { Course } from './entities/course.entity'
 
+/**
+ * 학기 from a start date: March–August is the spring term ('YYYY-1'),
+ * September–February the autumn one ('YYYY-2', carrying the year it began
+ * in). A course saved without a term gets this, so the calendar's semester
+ * picker is never empty for older rows.
+ */
+export function termFromDate(date: string | null | undefined): string | null {
+  if (!date) {
+    return null
+  }
+
+  const [year, month] = date.split('-').map(Number)
+
+  if (!year || !month) {
+    return null
+  }
+
+  if (month >= 3 && month <= 8) {
+    return `${year}-1`
+  }
+
+  return month >= 9 ? `${year}-2` : `${year - 1}-2`
+}
+
 @Injectable()
 export class CoursesService {
   constructor(
@@ -39,6 +63,7 @@ export class CoursesService {
 
     const course = this.courseRepository.create({
       ...dto,
+      term: dto.term ?? termFromDate(dto.startDate),
       level: dto.level ?? null,
       capacity: dto.capacity ?? 0,
       isPublished: dto.isPublished ?? false,
@@ -55,6 +80,11 @@ export class CoursesService {
     this.assertPeriod(dto.startDate ?? course.startDate, dto.endDate ?? course.endDate)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
+
+    // Dates moved and no term was given: follow the new start date.
+    if (dto.term === undefined && dto.startDate) {
+      course.term = termFromDate(dto.startDate)
+    }
 
     // Sessions changed and the admin did not type a figure: recompute.
     if (dto.weeklyHours === undefined && dto.sessions) {

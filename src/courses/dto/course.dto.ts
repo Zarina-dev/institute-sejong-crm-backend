@@ -89,6 +89,12 @@ export class CreateCourseDto {
   @MaxLength(120)
   courseCode?: string | null
 
+  /** 학기 — 'YYYY-1' or 'YYYY-2'; derived from startDate when omitted. */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @Matches(/^\d{4}-[12]$/, { message: 'validation.course.termInvalid' })
+  term?: string | null
+
   /** A class always runs between two dates; the timetable is unrolled from them. */
   @IsDateString({}, { message: 'validation.course.startDateRequired' })
   startDate!: string

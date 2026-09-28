@@ -3,11 +3,13 @@ import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { AuthModule } from './auth/auth.module'
+import { CompetitionsModule } from './competitions/competitions.module'
 import { ContentModule } from './content/content.module'
 import { CoursesModule } from './courses/courses.module'
 import { GalleryModule } from './gallery/gallery.module'
 import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
+import { MeetingsModule } from './meetings/meetings.module'
 import { NewsModule } from './news/news.module'
 import { StaffModule } from './staff/staff.module'
 import { TextbooksModule } from './textbooks/textbooks.module'
@@ -39,8 +41,10 @@ import { UploadsModule } from './uploads/uploads.module'
     MaterialsModule,
     CoursesModule,
     ContentModule,
+    CompetitionsModule,
     GalleryModule,
     NewsModule,
+    MeetingsModule,
     StaffModule,
     TextbooksModule,
     UploadsModule,

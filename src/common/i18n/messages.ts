@@ -54,6 +54,17 @@ const en = {
   'errors.album.notFound': 'Album not found.',
   'errors.staff.notFound': 'Staff member not found.',
   'errors.fileTooLarge': 'The file is too large. Maximum is {max}.',
+
+  // ---- validation: 학기 · 대회 기록 · 회의록
+  "validation.course.termInvalid": "Use YYYY-1 or YYYY-2 for the semester.",
+  "validation.competition.kindInvalid": "Choose a competition.",
+  "validation.competition.titleRequired": "Enter the competition name.",
+  "validation.competition.dateInvalid": "Use YYYY-MM-DD for the date.",
+  "validation.competition.winnerNameRequired": "Enter the winner's name.",
+  "validation.meeting.titleRequired": "Enter a subject for the meeting.",
+  "validation.meeting.dateInvalid": "Use YYYY-MM-DD for the date.",
+  "errors.competition.notFound": "Competition record not found.",
+  "errors.meeting.notFound": "Meeting minutes not found.",
 } as const
 
 export type MessageKey = keyof typeof en
@@ -94,6 +105,15 @@ const ru: Dictionary = {
   'errors.album.notFound': 'Альбом не найден.',
   'errors.staff.notFound': 'Сотрудник не найден.',
   'errors.fileTooLarge': 'Файл слишком большой. Максимум — {max}.',
+  "validation.course.termInvalid": "Семестр в формате ГГГГ-1 или ГГГГ-2.",
+  "validation.competition.kindInvalid": "Выберите конкурс.",
+  "validation.competition.titleRequired": "Введите название конкурса.",
+  "validation.competition.dateInvalid": "Дата в формате ГГГГ-ММ-ДД.",
+  "validation.competition.winnerNameRequired": "Введите имя победителя.",
+  "validation.meeting.titleRequired": "Введите тему собрания.",
+  "validation.meeting.dateInvalid": "Дата в формате ГГГГ-ММ-ДД.",
+  "errors.competition.notFound": "Запись о конкурсе не найдена.",
+  "errors.meeting.notFound": "Протокол не найден.",
 }
 
 const ko: Dictionary = {
@@ -131,6 +151,15 @@ const ko: Dictionary = {
   'errors.album.notFound': '사진첩을 찾을 수 없습니다.',
   'errors.staff.notFound': '교직원을 찾을 수 없습니다.',
   'errors.fileTooLarge': '파일이 너무 큽니다. 최대 {max}까지 가능합니다.',
+  "validation.course.termInvalid": "학기는 YYYY-1 또는 YYYY-2 형식입니다.",
+  "validation.competition.kindInvalid": "대회를 선택하세요.",
+  "validation.competition.titleRequired": "대회명을 입력하세요.",
+  "validation.competition.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
+  "validation.competition.winnerNameRequired": "수상자 이름을 입력하세요.",
+  "validation.meeting.titleRequired": "회의 안건을 입력하세요.",
+  "validation.meeting.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
+  "errors.competition.notFound": "대회 기록을 찾을 수 없습니다.",
+  "errors.meeting.notFound": "회의록을 찾을 수 없습니다.",
 }
 
 const ky: Dictionary = {
@@ -168,6 +197,15 @@ const ky: Dictionary = {
   'errors.album.notFound': 'Альбом табылган жок.',
   'errors.staff.notFound': 'Кызматкер табылган жок.',
   'errors.fileTooLarge': 'Файл өтө чоң. Максимум — {max}.',
+  "validation.course.termInvalid": "Семестр ЖЖЖЖ-1 же ЖЖЖЖ-2 форматында.",
+  "validation.competition.kindInvalid": "Сынакты тандаңыз.",
+  "validation.competition.titleRequired": "Сынактын аталышын киргизиңиз.",
+  "validation.competition.dateInvalid": "Күнү ЖЖЖЖ-АА-КК форматында.",
+  "validation.competition.winnerNameRequired": "Жеңүүчүнүн атын киргизиңиз.",
+  "validation.meeting.titleRequired": "Жыйындын темасын киргизиңиз.",
+  "validation.meeting.dateInvalid": "Күнү ЖЖЖЖ-АА-КК форматында.",
+  "errors.competition.notFound": "Сынактын жазуусу табылган жок.",
+  "errors.meeting.notFound": "Протокол табылган жок.",
 }
 
 export const dictionaries: Record<Language, Dictionary> = { en, ru, ko, ky }

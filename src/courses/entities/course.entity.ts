@@ -50,6 +50,15 @@ export class Course {
   @Column({ type: 'varchar', length: 120, nullable: true })
   courseCode!: string | null
 
+  /**
+   * 학기 — 'YYYY-1' (봄) or 'YYYY-2' (가을). The academic calendar is read one
+   * semester at a time, and the office reports head counts per semester, so
+   * it is stored rather than guessed from the dates on every read; it is
+   * filled in from startDate when a course is saved without one.
+   */
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  term!: string | null
+
   @Column({ type: 'varchar', length: 20, nullable: true })
   startDate!: string | null
 
