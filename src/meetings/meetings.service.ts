@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { sanitizeRichText } from '../common/sanitize'
+import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateMeetingDto, UpdateMeetingDto } from './dto/meeting.dto'
 import { Meeting } from './entities/meeting.entity'
 
@@ -34,6 +35,7 @@ export class MeetingsService {
       attendees: dto.attendees ?? '',
       body: sanitizeRichText(dto.body ?? ''),
       decisions: sanitizeRichText(dto.decisions ?? ''),
+      attachments: dto.attachments ?? [],
     })
 
     return this.meetingRepository.save(meeting)
@@ -41,18 +43,28 @@ export class MeetingsService {
 
   async update(id: string, dto: UpdateMeetingDto) {
     const meeting = await this.getById(id)
+    const previousFiles = meeting.attachments ?? []
 
     Object.assign(meeting, dto, {
       ...(dto.body !== undefined ? { body: sanitizeRichText(dto.body) } : {}),
       ...(dto.decisions !== undefined ? { decisions: sanitizeRichText(dto.decisions) } : {}),
     })
 
-    return this.meetingRepository.save(meeting)
+    const saved = await this.meetingRepository.save(meeting)
+
+    // Files dropped from the list should not linger on disk.
+    if (dto.attachments !== undefined) {
+      const kept = new Set(saved.attachments.map((attachment) => attachment.url))
+      await Promise.all(previousFiles.filter((file) => !kept.has(file.url)).map((file) => removeUploadedFile(file.url)))
+    }
+
+    return saved
   }
 
   async remove(id: string) {
     const meeting = await this.getById(id)
     await this.meetingRepository.remove(meeting)
+    await Promise.all((meeting.attachments ?? []).map((file) => removeUploadedFile(file.url)))
     return { success: true }
   }
 }

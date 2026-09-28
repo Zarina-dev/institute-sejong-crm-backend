@@ -10,12 +10,24 @@ import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
 
 export const IMAGES_DIR = './uploads/images'
+export const DOCUMENTS_DIR = './uploads/documents'
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+export const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'] as const
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/
 
+/**
+ * Attachments for 회의록. `.hwp` and `.hwpx` are what the office actually
+ * writes, and Windows reports them as anything from `application/x-hwp` to
+ * `application/octet-stream`, so documents are checked by extension and size
+ * alone. They are never executed or rendered: stored under a random name and
+ * handed back as downloads.
+ */
+const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'hwp', 'hwpx', 'txt', 'csv', 'zip', 'jpg', 'jpeg', 'png'] as const
+
 mkdirSync(IMAGES_DIR, { recursive: true })
+mkdirSync(DOCUMENTS_DIR, { recursive: true })
 
 /**
  * Disk storage with a random file name and a double check on the type:
@@ -44,6 +56,28 @@ function uploadOptions(dir: string, extensions: readonly string[], mime: RegExp)
 
 const imageUploadOptions = uploadOptions(IMAGES_DIR, IMAGE_EXTENSIONS, IMAGE_MIME)
 
+/** Same storage as images, extension-only check, and a larger cap. */
+const documentUploadOptions: MulterOptions = {
+  storage: diskStorage({
+    destination: DOCUMENTS_DIR,
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${extname(file.originalname || '').toLowerCase()}`),
+  }),
+  limits: { fileSize: MAX_DOCUMENT_SIZE, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ext = extname(file.originalname || '')
+      .toLowerCase()
+      .slice(1)
+
+    if (!DOCUMENT_EXTENSIONS.includes(ext as (typeof DOCUMENT_EXTENSIONS)[number])) {
+      const allowed = DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(', ')
+      cb(new BadRequestException(localized('validation.material.fileType', { ext, allowed })), false)
+      return
+    }
+
+    cb(null, true)
+  },
+}
+
 /**
  * Image intake. The route answers `{ url, name, size, type }` where
  * `url` is site-relative (`/uploads/<kind>/<uuid>.<ext>`) — files are served
@@ -59,6 +93,14 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/images')
+  }
+
+  /** 회의록 attachments — .hwp, .pdf and the Office formats. */
+  @Post('documents')
+  @Authenticated('admin')
+  @UseInterceptors(FileInterceptor('file', documentUploadOptions))
+  uploadDocument(@UploadedFile() file?: Express.Multer.File) {
+    return this.describe(file, '/uploads/documents')
   }
 
   private describe(file: Express.Multer.File | undefined, prefix: string) {

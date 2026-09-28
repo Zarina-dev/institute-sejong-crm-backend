@@ -1,5 +1,15 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+/** One file attached to the minutes, as `POST /uploads/documents` returns it. */
+export type MeetingAttachment = {
+  /** Site-relative `/uploads/documents/…` path. */
+  url: string
+  /** The name the file had on the admin's machine. */
+  name: string
+  size: number
+  type: string
+}
+
 /**
  * 회의록 — internal minutes. Unlike every other table in this project these
  * rows never reach the public site: the controller marks *all* of its routes
@@ -29,6 +39,14 @@ export class Meeting {
   /** 결정 사항 — kept apart from the notes because it is what gets acted on. */
   @Column({ type: 'text', default: '' })
   decisions!: string
+
+  /**
+   * Files handed out at the meeting — typically .hwp. Stored with the row
+   * rather than in a table of their own: they are only ever read with the
+   * minutes they belong to.
+   */
+  @Column({ type: 'jsonb', default: [] })
+  attachments!: MeetingAttachment[]
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

@@ -63,6 +63,7 @@ const en = {
   "validation.competition.winnerNameRequired": "Enter the winner's name.",
   "validation.meeting.titleRequired": "Enter a subject for the meeting.",
   "validation.meeting.dateInvalid": "Use YYYY-MM-DD for the date.",
+  "validation.meeting.attachmentInvalid": "Attach the file through this page.",
   "errors.competition.notFound": "Competition record not found.",
   "errors.meeting.notFound": "Meeting minutes not found.",
 } as const
@@ -112,6 +113,7 @@ const ru: Dictionary = {
   "validation.competition.winnerNameRequired": "Введите имя победителя.",
   "validation.meeting.titleRequired": "Введите тему собрания.",
   "validation.meeting.dateInvalid": "Дата в формате ГГГГ-ММ-ДД.",
+  "validation.meeting.attachmentInvalid": "Прикрепите файл через эту страницу.",
   "errors.competition.notFound": "Запись о конкурсе не найдена.",
   "errors.meeting.notFound": "Протокол не найден.",
 }
@@ -158,6 +160,7 @@ const ko: Dictionary = {
   "validation.competition.winnerNameRequired": "수상자 이름을 입력하세요.",
   "validation.meeting.titleRequired": "회의 안건을 입력하세요.",
   "validation.meeting.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
+  "validation.meeting.attachmentInvalid": "파일은 이 페이지를 통해 첨부해 주세요.",
   "errors.competition.notFound": "대회 기록을 찾을 수 없습니다.",
   "errors.meeting.notFound": "회의록을 찾을 수 없습니다.",
 }
@@ -204,6 +207,7 @@ const ky: Dictionary = {
   "validation.competition.winnerNameRequired": "Жеңүүчүнүн атын киргизиңиз.",
   "validation.meeting.titleRequired": "Жыйындын темасын киргизиңиз.",
   "validation.meeting.dateInvalid": "Күнү ЖЖЖЖ-АА-КК форматында.",
+  "validation.meeting.attachmentInvalid": "Файлды ушул баракча аркылуу тиркеңиз.",
   "errors.competition.notFound": "Сынактын жазуусу табылган жок.",
   "errors.meeting.notFound": "Протокол табылган жок.",
 }
