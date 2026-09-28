@@ -2,15 +2,16 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { TermsService } from '../terms/terms.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import { weeklyHoursFromSessions } from './session-hours'
 import { Course } from './entities/course.entity'
 
 /**
- * 학기 from a start date: March–August is the spring term ('YYYY-1'),
- * September–February the autumn one ('YYYY-2', carrying the year it began
- * in). A course saved without a term gets this, so the calendar's semester
- * picker is never empty for older rows.
+ * Last-resort 학기 guess, used only while the institute has not defined any
+ * semester dates yet (March–August → 'YYYY-1', September–February →
+ * 'YYYY-2'). Once 학기 관리 holds a row covering the date, that row wins:
+ * when a semester runs is the institute's decision, not the calendar's.
  */
 export function termFromDate(date: string | null | undefined): string | null {
   if (!date) {
@@ -35,7 +36,13 @@ export class CoursesService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    private readonly termsService: TermsService,
   ) {}
+
+  /** The institute's own dates first; the month heuristic only if it has none. */
+  private async resolveTerm(date: string | null | undefined) {
+    return (await this.termsService.codeForDate(date)) ?? termFromDate(date)
+  }
 
   listCourses({ publishedOnly = false }: { publishedOnly?: boolean } = {}) {
     const query = this.courseRepository.createQueryBuilder('course')
@@ -57,13 +64,13 @@ export class CoursesService {
     return course
   }
 
-  createCourse(dto: CreateCourseDto) {
+  async createCourse(dto: CreateCourseDto) {
     this.assertSessions(dto.sessions)
     this.assertPeriod(dto.startDate, dto.endDate)
 
     const course = this.courseRepository.create({
       ...dto,
-      term: dto.term ?? termFromDate(dto.startDate),
+      term: dto.term ?? (await this.resolveTerm(dto.startDate)),
       level: dto.level ?? null,
       capacity: dto.capacity ?? 0,
       isPublished: dto.isPublished ?? false,
@@ -83,7 +90,7 @@ export class CoursesService {
 
     // Dates moved and no term was given: follow the new start date.
     if (dto.term === undefined && dto.startDate) {
-      course.term = termFromDate(dto.startDate)
+      course.term = await this.resolveTerm(dto.startDate)
     }
 
     // Sessions changed and the admin did not type a figure: recompute.
