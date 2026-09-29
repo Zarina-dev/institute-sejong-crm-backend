@@ -48,6 +48,10 @@ export class GalleryAlbum {
   @Column({ type: 'varchar', length: 500, nullable: true })
   coverImage!: string | null
 
+  /** Photos shown in the album itself, in the order they were added. */
+  @Column({ type: 'jsonb', default: [] })
+  images!: string[]
+
   /** Optional exact date, for ordering inside a year. */
   @Column({ type: 'varchar', length: 20, nullable: true })
   heldOn!: string | null

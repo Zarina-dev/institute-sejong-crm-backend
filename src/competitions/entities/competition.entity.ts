@@ -53,9 +53,16 @@ export class Competition {
   @Column({ type: 'jsonb', default: [] })
   winners!: CompetitionWinner[]
 
-  /** Site-relative `/uploads/images/…` photo. */
+  /** Site-relative `/uploads/images/…` photo — the one used as the cover. */
   @Column({ type: 'varchar', length: 500, nullable: true })
   coverImage!: string | null
+
+  /**
+   * The rest of the photos from that day. Kept on the row like the winners:
+   * they are only ever read with the edition they belong to.
+   */
+  @Column({ type: 'jsonb', default: [] })
+  images!: string[]
 
   /** Google Photos album, as in 행사 사진첩. */
   @Column({ type: 'varchar', length: 500, nullable: true })

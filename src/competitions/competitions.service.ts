@@ -49,6 +49,7 @@ export class CompetitionsService {
       summary: sanitizeRichText(dto.summary ?? ''),
       winners: byRank(dto.winners),
       coverImage: dto.coverImage ?? null,
+      images: dto.images ?? [],
       albumUrl: dto.albumUrl || null,
       isPublished: dto.isPublished ?? true,
     })
@@ -59,6 +60,7 @@ export class CompetitionsService {
   async update(id: string, dto: UpdateCompetitionDto) {
     const competition = await this.getById(id)
     const previousCover = competition.coverImage
+    const previousImages = competition.images ?? []
 
     Object.assign(competition, dto, {
       ...(dto.summary !== undefined ? { summary: sanitizeRichText(dto.summary) } : {}),
@@ -73,6 +75,12 @@ export class CompetitionsService {
       await removeUploadedFile(previousCover)
     }
 
+    // Photos dropped from the list should not linger on disk.
+    if (dto.images !== undefined) {
+      const kept = new Set(saved.images ?? [])
+      await Promise.all(previousImages.filter((url) => !kept.has(url)).map((url) => removeUploadedFile(url)))
+    }
+
     return saved
   }
 
@@ -80,6 +88,7 @@ export class CompetitionsService {
     const competition = await this.getById(id)
     await this.competitionRepository.remove(competition)
     await removeUploadedFile(competition.coverImage)
+    await Promise.all((competition.images ?? []).map((url) => removeUploadedFile(url)))
     return { success: true }
   }
 }

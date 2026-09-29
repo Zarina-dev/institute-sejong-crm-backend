@@ -41,6 +41,7 @@ export class GalleryService {
       description: dto.description ?? '',
       albumUrl: dto.albumUrl || null,
       coverImage: dto.coverImage ?? null,
+      images: dto.images ?? [],
       heldOn: dto.heldOn || null,
       isPublished: dto.isPublished ?? true,
     })
@@ -51,6 +52,7 @@ export class GalleryService {
   async update(id: string, dto: UpdateAlbumDto) {
     const album = await this.getById(id)
     const previousCover = album.coverImage
+    const previousImages = album.images ?? []
 
     Object.assign(album, dto, {
       ...(dto.albumUrl !== undefined ? { albumUrl: dto.albumUrl || null } : {}),
@@ -63,6 +65,12 @@ export class GalleryService {
       await removeUploadedFile(previousCover)
     }
 
+    // Photos dropped from the album should not linger on disk.
+    if (dto.images !== undefined) {
+      const kept = new Set(saved.images ?? [])
+      await Promise.all(previousImages.filter((url) => !kept.has(url)).map((url) => removeUploadedFile(url)))
+    }
+
     return saved
   }
 
@@ -70,6 +78,7 @@ export class GalleryService {
     const album = await this.getById(id)
     await this.albumRepository.remove(album)
     await removeUploadedFile(album.coverImage)
+    await Promise.all((album.images ?? []).map((url) => removeUploadedFile(url)))
     return { success: true }
   }
 }

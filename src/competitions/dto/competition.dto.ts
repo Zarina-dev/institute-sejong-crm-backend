@@ -88,6 +88,13 @@ export class CreateCompetitionDto {
   @Matches(/^\/uploads\/images\/[\w.-]+$/, { message: 'validation.staff.photoInvalid' })
   coverImage?: string | null
 
+  /** Only images uploaded through the site; the order is the display order. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @Matches(/^\/uploads\/images\/[\w.-]+$/, { each: true, message: 'validation.staff.photoInvalid' })
+  images?: string[]
+
   @IsOptional()
   @ValidateIf((_, value) => value !== null && value !== '')
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true }, { message: 'validation.album.urlInvalid' })

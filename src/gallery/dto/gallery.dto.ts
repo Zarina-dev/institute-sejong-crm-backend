@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUrl, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import { ArrayMaxSize, IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, IsUrl, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
 
 import { EVENT_TAGS, type EventTag } from '../entities/gallery-album.entity'
 
@@ -34,6 +34,13 @@ export class CreateAlbumDto {
   @ValidateIf((_, value) => value !== null)
   @Matches(/^\/uploads\/images\/[\w.-]+$/, { message: 'validation.staff.photoInvalid' })
   coverImage?: string | null
+
+  /** Only images uploaded through the site; the order is the display order. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(30)
+  @Matches(/^\/uploads\/images\/[\w.-]+$/, { each: true, message: 'validation.staff.photoInvalid' })
+  images?: string[]
 
   @IsOptional()
   @ValidateIf((_, value) => value !== null && value !== '')
