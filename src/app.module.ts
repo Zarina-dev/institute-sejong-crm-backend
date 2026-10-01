@@ -14,6 +14,7 @@ import { MaterialsModule } from './materials/materials.module'
 import { MeetingsModule } from './meetings/meetings.module'
 import { NewsModule } from './news/news.module'
 import { StaffModule } from './staff/staff.module'
+import { StudiesModule } from './studies/studies.module'
 import { TermsModule } from './terms/terms.module'
 import { TextbooksModule } from './textbooks/textbooks.module'
 import { UploadsModule } from './uploads/uploads.module'
@@ -51,6 +52,7 @@ import { UploadsModule } from './uploads/uploads.module'
     NewsModule,
     MeetingsModule,
     StaffModule,
+    StudiesModule,
     TermsModule,
     TextbooksModule,
     UploadsModule,
