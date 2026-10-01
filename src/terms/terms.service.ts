@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm'
 import { Not, Repository } from 'typeorm'
 
+import { localized } from '../common/i18n/i18n-exception.filter'
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto'
 import { AcademicTerm, type TermKind } from './entities/term.entity'
 
@@ -118,10 +119,20 @@ export class TermsService {
    */
   private async assertNoOverlap(startDate: string, endDate: string, exceptId?: string) {
     const terms = await this.list()
-    const clash = terms.some((term) => term.id !== exceptId && term.startDate <= endDate && startDate <= term.endDate)
+    const clash = terms.find((term) => term.id !== exceptId && term.startDate <= endDate && startDate <= term.endDate)
 
-    if (clash) {
-      throw new BadRequestException('validation.term.overlap')
+    if (!clash) {
+      return
     }
+
+    // Saying "those dates are taken" leaves the admin to find out by whom.
+    // Name the term, its period, and the days the two actually share.
+    throw new BadRequestException(
+      localized('validation.term.overlap', {
+        term: clash.name || clash.code,
+        period: `${clash.startDate} ~ ${clash.endDate}`,
+        overlap: `${startDate > clash.startDate ? startDate : clash.startDate} ~ ${endDate < clash.endDate ? endDate : clash.endDate}`,
+      }),
+    )
   }
 }
