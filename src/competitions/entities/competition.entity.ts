@@ -1,8 +1,12 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
-/** The two competitions the institute runs and keeps a record of. */
-export const COMPETITION_KINDS = ['speech', 'writing'] as const
-export type CompetitionKind = (typeof COMPETITION_KINDS)[number]
+/**
+ * The two competitions the institute has always run. They are codes rather
+ * than names because the site translates them; a competition added later is
+ * stored under the name the admin gives it, so the list is open.
+ */
+export const BUILTIN_COMPETITION_KINDS = ['speech', 'writing'] as const
+export type CompetitionKind = string
 
 /** One line of the results table: 순위 · 이름 · 비고 (반, 상품, 소속 …). */
 export type CompetitionWinner = {
@@ -23,8 +27,8 @@ export class Competition {
   @PrimaryGeneratedColumn('uuid')
   id!: string
 
-  /** 말하기 대회 (speech) or 백일장 (writing). */
-  @Column({ type: 'varchar', length: 20 })
+  /** `speech` 말하기 대회, `writing` 백일장, or the name of another competition. */
+  @Column({ type: 'varchar', length: 60 })
   kind!: CompetitionKind
 
   /** 제10회 한국어 말하기 대회 — the name as it was announced. */

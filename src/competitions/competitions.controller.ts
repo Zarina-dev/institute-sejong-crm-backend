@@ -3,10 +3,10 @@ import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query
 import { Authenticated } from '../auth/auth.guard'
 import { CompetitionsService } from './competitions.service'
 import { CreateCompetitionDto, UpdateCompetitionDto } from './dto/competition.dto'
-import { COMPETITION_KINDS, type CompetitionKind } from './entities/competition.entity'
+import type { CompetitionKind } from './entities/competition.entity'
 
-const asKind = (value?: string): CompetitionKind | undefined =>
-  COMPETITION_KINDS.includes(value as CompetitionKind) ? (value as CompetitionKind) : undefined
+/** Any name may be a competition, so the filter only has to be non-empty. */
+const asKind = (value?: string): CompetitionKind | undefined => value?.trim() || undefined
 
 @Controller('competitions')
 export class CompetitionsController {

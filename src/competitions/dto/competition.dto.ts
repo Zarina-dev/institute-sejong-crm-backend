@@ -1,10 +1,9 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { Type } from 'class-transformer'
+import { Transform, Type } from 'class-transformer'
 import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
-  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -18,9 +17,9 @@ import {
   ValidateNested,
 } from 'class-validator'
 
-import { COMPETITION_KINDS } from '../entities/competition.entity'
-
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+const trimmed = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value)
 
 export class CompetitionWinnerDto {
   @IsInt()
@@ -40,8 +39,16 @@ export class CompetitionWinnerDto {
 }
 
 export class CreateCompetitionDto {
-  @IsIn(COMPETITION_KINDS, { message: 'validation.competition.kindInvalid' })
-  kind!: (typeof COMPETITION_KINDS)[number]
+  /**
+   * `speech`, `writing`, or the name of a competition the institute has
+   * started running since. The list is open, so this is only checked for
+   * being a name at all.
+   */
+  @Transform(trimmed)
+  @IsString()
+  @MinLength(1, { message: 'validation.competition.kindInvalid' })
+  @MaxLength(60, { message: 'validation.competition.kindInvalid' })
+  kind!: string
 
   @IsString()
   @MinLength(1, { message: 'validation.competition.titleRequired' })
