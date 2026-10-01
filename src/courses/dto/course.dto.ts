@@ -89,18 +89,28 @@ export class CreateCourseDto {
   @MaxLength(120)
   courseCode?: string | null
 
-  /** 학기 — 'YYYY-1' or 'YYYY-2'; derived from startDate when omitted. */
+  /**
+   * 학기 — the code of a term defined in 학기 관리 ('YYYY-1', 'YYYY-2',
+   * 'YYYY-b1'). A class is filed under the semester the admin picks, and
+   * takes its dates from it.
+   */
   @IsOptional()
   @ValidateIf((_, value) => value !== null && value !== '')
-  @Matches(/^\d{4}-[12]$/, { message: 'validation.course.termInvalid' })
+  @Matches(/^\d{4}-(?:[12]|b\d+)$/, { message: 'validation.course.termInvalid' })
   term?: string | null
 
-  /** A class always runs between two dates; the timetable is unrolled from them. */
+  /**
+   * A class always runs between two dates — the timetable is unrolled from
+   * them — but they are the semester's dates, so they may be left out when
+   * `term` names one.
+   */
+  @IsOptional()
   @IsDateString({}, { message: 'validation.course.startDateRequired' })
-  startDate!: string
+  startDate?: string
 
+  @IsOptional()
   @IsDateString({}, { message: 'validation.course.endDateRequired' })
-  endDate!: string
+  endDate?: string
 
   @IsOptional()
   @IsInt()

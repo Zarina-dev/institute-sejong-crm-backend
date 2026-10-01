@@ -44,6 +44,26 @@ export class CoursesService {
     return (await this.termsService.codeForDate(date)) ?? termFromDate(date)
   }
 
+  /**
+   * A class runs for a semester, so the admin picks the semester and the
+   * period comes from it. Dates sent explicitly still win — the seed data
+   * and older clients send them — and a class may be entered with dates
+   * alone, in which case the term follows from the start date as before.
+   */
+  private async resolvePeriod(term: string | null | undefined, startDate?: string, endDate?: string) {
+    if (startDate && endDate) {
+      return { startDate, endDate }
+    }
+
+    const defined = await this.termsService.byCode(term)
+
+    if (!defined) {
+      throw new BadRequestException('validation.course.periodRequired')
+    }
+
+    return { startDate: startDate ?? defined.startDate, endDate: endDate ?? defined.endDate }
+  }
+
   listCourses({ publishedOnly = false }: { publishedOnly?: boolean } = {}) {
     const query = this.courseRepository.createQueryBuilder('course')
 
@@ -66,11 +86,14 @@ export class CoursesService {
 
   async createCourse(dto: CreateCourseDto) {
     this.assertSessions(dto.sessions)
-    this.assertPeriod(dto.startDate, dto.endDate)
+
+    const period = await this.resolvePeriod(dto.term, dto.startDate, dto.endDate)
+    this.assertPeriod(period.startDate, period.endDate)
 
     const course = this.courseRepository.create({
       ...dto,
-      term: dto.term ?? (await this.resolveTerm(dto.startDate)),
+      ...period,
+      term: dto.term ?? (await this.resolveTerm(period.startDate)),
       level: dto.level ?? null,
       capacity: dto.capacity ?? 0,
       isPublished: dto.isPublished ?? false,
@@ -87,6 +110,17 @@ export class CoursesService {
     this.assertPeriod(dto.startDate ?? course.startDate, dto.endDate ?? course.endDate)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
+
+    // Moved to another semester: the period moves with it, unless the dates
+    // were sent too.
+    if (dto.term && !dto.startDate && !dto.endDate) {
+      const defined = await this.termsService.byCode(dto.term)
+
+      if (defined) {
+        course.startDate = defined.startDate
+        course.endDate = defined.endDate
+      }
+    }
 
     // Dates moved and no term was given: follow the new start date.
     if (dto.term === undefined && dto.startDate) {

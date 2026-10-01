@@ -40,6 +40,11 @@ export class TermsService {
     return terms.find((term) => term.startDate <= date && date <= term.endDate)?.code ?? null
   }
 
+  /** The term behind a stored code, or null if that term is gone. */
+  byCode(code: string | null | undefined) {
+    return code ? this.termRepository.findOne({ where: { code } }) : Promise.resolve(null)
+  }
+
   async create(dto: CreateTermDto) {
     this.assertPeriod(dto.startDate, dto.endDate)
 
