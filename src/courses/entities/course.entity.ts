@@ -59,6 +59,22 @@ export class Course {
   @Column({ type: 'varchar', length: 20, nullable: true })
   term!: string | null
 
+  /**
+   * Whether the class runs for the whole semester. Most do, and then the
+   * dates below are the term's and follow it when 학기 관리 changes them.
+   * A 문화 강좌 is often a short course inside the semester instead — a
+   * four-week 부채춤 class, say — and sets its own dates, which is what
+   * this flag distinguishes. It is stored rather than inferred from the
+   * dates matching the term's: "runs all semester" is a decision, and a
+   * class that happens to start and end with the term is not the same thing.
+   *
+   * Nullable on purpose: a class entered before this existed carries dates
+   * the admin typed, so it reads as null — "not stated" — and keeps them,
+   * rather than being swept into following a term it never followed.
+   */
+  @Column({ type: 'boolean', nullable: true })
+  followsTerm!: boolean | null
+
   @Column({ type: 'varchar', length: 20, nullable: true })
   startDate!: string | null
 

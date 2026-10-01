@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Not, Repository } from 'typeorm'
 
 import { localized } from '../common/i18n/i18n-exception.filter'
+import { Course } from '../courses/entities/course.entity'
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto'
 import { AcademicTerm, type TermKind } from './entities/term.entity'
 
@@ -11,6 +12,8 @@ export class TermsService {
   constructor(
     @InjectRepository(AcademicTerm)
     private readonly termRepository: Repository<AcademicTerm>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
   ) {}
 
   /** Newest first, and within a year in the order they actually ran. */
@@ -75,7 +78,16 @@ export class TermsService {
       term.code = await this.nextCode(term.year, term.kind, id)
     }
 
-    return this.termRepository.save(term)
+    const saved = await this.termRepository.save(term)
+
+    // A class that runs the whole semester runs the whole of the new one too.
+    // A class with its own dates keeps them: they were the admin's decision.
+    await this.courseRepository.update(
+      { term: saved.code, followsTerm: true },
+      { startDate: saved.startDate, endDate: saved.endDate },
+    )
+
+    return saved
   }
 
   async remove(id: string) {

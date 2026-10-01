@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { localized } from '../common/i18n/i18n-exception.filter'
 import { TermsService } from '../terms/terms.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import { weeklyHoursFromSessions } from './session-hours'
@@ -46,22 +47,41 @@ export class CoursesService {
 
   /**
    * A class runs for a semester, so the admin picks the semester and the
-   * period comes from it. Dates sent explicitly still win — the seed data
-   * and older clients send them — and a class may be entered with dates
-   * alone, in which case the term follows from the start date as before.
+   * period comes from it. A class that does not run the whole semester — a
+   * four-week 문화 강좌, say — sets its own dates, and they have to fall
+   * inside the term it is filed under, or the filing would be a lie.
+   *
+   * A class sent with dates and no term still works: the seed data does
+   * that, and the term then follows from the start date as before.
    */
-  private async resolvePeriod(term: string | null | undefined, startDate?: string, endDate?: string) {
-    if (startDate && endDate) {
-      return { startDate, endDate }
-    }
-
+  private async resolvePeriod(
+    term: string | null | undefined,
+    { followsTerm = true, startDate, endDate }: { followsTerm?: boolean | null; startDate?: string; endDate?: string },
+  ) {
     const defined = await this.termsService.byCode(term)
 
-    if (!defined) {
-      throw new BadRequestException('validation.course.periodRequired')
+    if (followsTerm && defined) {
+      return { startDate: defined.startDate, endDate: defined.endDate }
     }
 
-    return { startDate: startDate ?? defined.startDate, endDate: endDate ?? defined.endDate }
+    if (!startDate || !endDate) {
+      if (!defined) {
+        throw new BadRequestException('validation.course.periodRequired')
+      }
+
+      return { startDate: startDate ?? defined.startDate, endDate: endDate ?? defined.endDate }
+    }
+
+    if (defined && (startDate < defined.startDate || endDate > defined.endDate)) {
+      throw new BadRequestException(
+        localized('validation.course.periodOutsideTerm', {
+          term: defined.name || defined.code,
+          period: `${defined.startDate} ~ ${defined.endDate}`,
+        }),
+      )
+    }
+
+    return { startDate, endDate }
   }
 
   listCourses({ publishedOnly = false }: { publishedOnly?: boolean } = {}) {
@@ -87,12 +107,16 @@ export class CoursesService {
   async createCourse(dto: CreateCourseDto) {
     this.assertSessions(dto.sessions)
 
-    const period = await this.resolvePeriod(dto.term, dto.startDate, dto.endDate)
+    // A request that carries its own dates is not following the term, even
+    // if it predates the flag and never said so.
+    const followsTerm = dto.followsTerm ?? !(dto.startDate && dto.endDate)
+    const period = await this.resolvePeriod(dto.term, { ...dto, followsTerm })
     this.assertPeriod(period.startDate, period.endDate)
 
     const course = this.courseRepository.create({
       ...dto,
       ...period,
+      followsTerm,
       term: dto.term ?? (await this.resolveTerm(period.startDate)),
       level: dto.level ?? null,
       capacity: dto.capacity ?? 0,
@@ -111,15 +135,18 @@ export class CoursesService {
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
 
-    // Moved to another semester: the period moves with it, unless the dates
-    // were sent too.
-    if (dto.term && !dto.startDate && !dto.endDate) {
-      const defined = await this.termsService.byCode(dto.term)
-
-      if (defined) {
-        course.startDate = defined.startDate
-        course.endDate = defined.endDate
-      }
+    // The semester or the kind of period changed: work the dates out again.
+    // A request carrying dates alone keeps the older behaviour below, where
+    // the dates win and the term follows them.
+    if (dto.term !== undefined || dto.followsTerm !== undefined) {
+      Object.assign(
+        course,
+        await this.resolvePeriod(dto.term ?? course.term, {
+          followsTerm: course.followsTerm ?? false,
+          startDate: dto.startDate ?? (course.followsTerm ? undefined : course.startDate ?? undefined),
+          endDate: dto.endDate ?? (course.followsTerm ? undefined : course.endDate ?? undefined),
+        }),
+      )
     }
 
     // Dates moved and no term was given: follow the new start date.

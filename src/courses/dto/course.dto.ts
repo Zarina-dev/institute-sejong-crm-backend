@@ -100,9 +100,17 @@ export class CreateCourseDto {
   term?: string | null
 
   /**
+   * Whether the class runs for the whole semester (the default) or only for
+   * part of it, which a 문화 강좌 often does.
+   */
+  @IsOptional()
+  @IsBoolean()
+  followsTerm?: boolean
+
+  /**
    * A class always runs between two dates — the timetable is unrolled from
-   * them — but they are the semester's dates, so they may be left out when
-   * `term` names one.
+   * them — but a class that follows its semester takes the term's, so they
+   * may be left out when `term` names one.
    */
   @IsOptional()
   @IsDateString({}, { message: 'validation.course.startDateRequired' })

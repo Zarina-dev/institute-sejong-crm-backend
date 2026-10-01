@@ -25,6 +25,7 @@ const en = {
   'validation.course.endDateRequired': 'Choose an end date.',
   'validation.course.endBeforeStart': 'The end date must be after the start date.',
   'validation.course.periodRequired': 'Choose the semester the class runs in.',
+  'validation.course.periodOutsideTerm': 'Those dates fall outside {term} ({period}). A class runs inside the semester it is filed under.',
 
   // ---- validation: news / schedule
   'validation.news.titleRequired': 'Enter a title.',
@@ -98,6 +99,7 @@ const ru: Dictionary = {
   'validation.course.endDateRequired': 'Выберите дату окончания.',
   'validation.course.endBeforeStart': 'Дата окончания должна быть позже даты начала.',
   'validation.course.periodRequired': 'Выберите семестр, в котором идёт занятие.',
+  'validation.course.periodOutsideTerm': 'Эти даты выходят за пределы периода «{term}» ({period}). Занятие должно идти внутри своего семестра.',
   'validation.news.titleRequired': 'Введите заголовок.',
   'validation.news.bodyRequired': 'Введите текст объявления.',
   'validation.schedule.timeInvalid': 'Время в формате ЧЧ:ММ.',
@@ -160,6 +162,7 @@ const ko: Dictionary = {
   'validation.course.endDateRequired': '종료일을 선택하세요.',
   'validation.course.endBeforeStart': '종료일은 시작일 이후여야 합니다.',
   'validation.course.periodRequired': '수업이 진행되는 학기를 선택하세요.',
+  'validation.course.periodOutsideTerm': '해당 기간은 「{term}」({period}) 학기를 벗어납니다. 수업 기간은 선택한 학기 안에 있어야 합니다.',
   'validation.news.titleRequired': '제목을 입력하세요.',
   'validation.news.bodyRequired': '공지 내용을 입력하세요.',
   'validation.schedule.timeInvalid': '시간은 HH:mm 형식으로 입력하세요.',
@@ -222,6 +225,7 @@ const ky: Dictionary = {
   'validation.course.endDateRequired': 'Аяктоо күнүн тандаңыз.',
   'validation.course.endBeforeStart': 'Аяктоо күнү башталуу күнүнөн кийин болушу керек.',
   'validation.course.periodRequired': 'Сабак өтүүчү семестрди тандаңыз.',
+  'validation.course.periodOutsideTerm': 'Бул күндөр «{term}» ({period}) семестринин чегинен чыгып кетет. Сабак өз семестринин ичинде өтүшү керек.',
   'validation.news.titleRequired': 'Аталышын киргизиңиз.',
   'validation.news.bodyRequired': 'Билдирүүнүн текстин киргизиңиз.',
   'validation.schedule.timeInvalid': 'Убакытты СС:ММ форматында киргизиңиз.',
