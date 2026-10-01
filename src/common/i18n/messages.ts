@@ -74,6 +74,10 @@ const en = {
   "errors.meeting.notFound": "Meeting minutes not found.",
   "validation.chronology.titleRequired": "Enter what happened.",
   "errors.chronology.notFound": "Chronology entry not found.",
+  "validation.event.titleRequired": "Enter the name of the event.",
+  "validation.event.dateInvalid": "Use YYYY-MM-DD for the date.",
+  "validation.event.endBeforeStart": "The end date must be after the start date.",
+  "errors.event.notFound": "Event not found.",
 } as const
 
 export type MessageKey = keyof typeof en
@@ -132,6 +136,10 @@ const ru: Dictionary = {
   "errors.meeting.notFound": "Протокол не найден.",
   "validation.chronology.titleRequired": "Опишите событие.",
   "errors.chronology.notFound": "Запись хроники не найдена.",
+  "validation.event.titleRequired": "Введите название мероприятия.",
+  "validation.event.dateInvalid": "Дата в формате ГГГГ-ММ-ДД.",
+  "validation.event.endBeforeStart": "Дата окончания должна быть позже даты начала.",
+  "errors.event.notFound": "Мероприятие не найдено.",
 }
 
 const ko: Dictionary = {
@@ -187,6 +195,10 @@ const ko: Dictionary = {
   "errors.meeting.notFound": "회의록을 찾을 수 없습니다.",
   "validation.chronology.titleRequired": "연혁 내용을 입력하세요.",
   "errors.chronology.notFound": "연혁 항목을 찾을 수 없습니다.",
+  "validation.event.titleRequired": "행사명을 입력하세요.",
+  "validation.event.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
+  "validation.event.endBeforeStart": "종료일은 시작일 이후여야 합니다.",
+  "errors.event.notFound": "행사를 찾을 수 없습니다.",
 }
 
 const ky: Dictionary = {
@@ -242,6 +254,10 @@ const ky: Dictionary = {
   "errors.meeting.notFound": "Протокол табылган жок.",
   "validation.chronology.titleRequired": "Окуяны жазыңыз.",
   "errors.chronology.notFound": "Тарых жазуусу табылган жок.",
+  "validation.event.titleRequired": "Иш-чаранын аталышын киргизиңиз.",
+  "validation.event.dateInvalid": "Күнү ЖЖЖЖ-АА-КК форматында.",
+  "validation.event.endBeforeStart": "Аяктоо күнү башталуу күнүнөн кийин болушу керек.",
+  "errors.event.notFound": "Иш-чара табылган жок.",
 }
 
 export const dictionaries: Record<Language, Dictionary> = { en, ru, ko, ky }
