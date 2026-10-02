@@ -84,11 +84,25 @@ export class CoursesService {
     return { startDate, endDate }
   }
 
-  listCourses({ publishedOnly = false }: { publishedOnly?: boolean } = {}) {
+  listCourses({
+    publishedOnly = false,
+    term,
+    category,
+  }: { publishedOnly?: boolean; term?: string; category?: 'language' | 'culture' } = {}) {
     const query = this.courseRepository.createQueryBuilder('course')
 
     if (publishedOnly) {
-      query.where('course.isPublished = :isPublished', { isPublished: true })
+      query.andWhere('course.isPublished = :isPublished', { isPublished: true })
+    }
+
+    // Every class carries its term (it is resolved on save), so one semester
+    // is an equality on an indexed column rather than a scan of the history.
+    if (term) {
+      query.andWhere('course.term = :term', { term })
+    }
+
+    if (category) {
+      query.andWhere('course.category = :category', { category })
     }
 
     return query.orderBy('course.title', 'ASC').addOrderBy('course.subject', 'ASC').getMany()

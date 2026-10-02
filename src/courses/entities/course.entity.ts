@@ -11,6 +11,9 @@ export type CourseSession = {
 export type CourseCategory = 'language' | 'culture'
 
 @Entity('courses')
+// Every list reads one semester of one category; history grows by a
+// semester at a time, so this is what keeps a page's query independent of it.
+@Index('idx_course_term_category', ['term', 'category'])
 export class Course {
   @PrimaryGeneratedColumn('uuid')
   id!: string

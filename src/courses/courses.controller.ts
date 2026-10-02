@@ -8,10 +8,19 @@ import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
-  /** Public catalogue; `?publishedOnly=true` is what the site uses. */
+  /**
+   * Public catalogue; `?publishedOnly=true` is what the site uses.
+   * `?term=2026-2` narrows it to one semester and `?category=culture` to one
+   * list — every page shows a single semester, so it should not download
+   * every class the institute has ever run to show one.
+   */
   @Get()
-  list(@Query('publishedOnly') publishedOnly?: string) {
-    return this.coursesService.listCourses({ publishedOnly: publishedOnly === 'true' })
+  list(@Query('publishedOnly') publishedOnly?: string, @Query('term') term?: string, @Query('category') category?: string) {
+    return this.coursesService.listCourses({
+      publishedOnly: publishedOnly === 'true',
+      term: term?.trim() || undefined,
+      category: category === 'language' || category === 'culture' ? category : undefined,
+    })
   }
 
   @Get(':id')
