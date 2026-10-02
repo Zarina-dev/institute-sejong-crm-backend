@@ -7,6 +7,7 @@ import { ChronologyModule } from './chronology/chronology.module'
 import { CompetitionsModule } from './competitions/competitions.module'
 import { ContentModule } from './content/content.module'
 import { CoursesModule } from './courses/courses.module'
+import { DashboardModule } from './dashboard/dashboard.module'
 import { EventsModule } from './events/events.module'
 import { GalleryModule } from './gallery/gallery.module'
 import { HealthController } from './health.controller'
@@ -44,6 +45,7 @@ import { UploadsModule } from './uploads/uploads.module'
     AuthModule,
     MaterialsModule,
     CoursesModule,
+    DashboardModule,
     ContentModule,
     ChronologyModule,
     CompetitionsModule,

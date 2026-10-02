@@ -14,9 +14,17 @@ export class MeetingsService {
     private readonly meetingRepository: Repository<Meeting>,
   ) {}
 
-  /** Most recent meeting first. */
+  /**
+   * Most recent meeting first, without the notes and decisions: the list
+   * shows the date, who was there and the files. The texts come from
+   * GET /meetings/:id when one meeting is opened — a year of weekly minutes
+   * is otherwise megabytes of HTML nobody is reading.
+   */
   list() {
-    return this.meetingRepository.find({ order: { heldOn: 'DESC', createdAt: 'DESC' } })
+    return this.meetingRepository.find({
+      select: { id: true, title: true, heldOn: true, attendees: true, attachments: true, createdAt: true, updatedAt: true },
+      order: { heldOn: 'DESC', createdAt: 'DESC' },
+    })
   }
 
   async getById(id: string) {

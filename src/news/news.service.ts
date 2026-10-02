@@ -22,9 +22,27 @@ export class NewsService {
     })
   }
 
-  /** Admin listing: everything, drafts included. */
+  /**
+   * Admin listing: everything, drafts included — but not the bodies. The
+   * table shows titles, dates and status; the body is only needed when one
+   * post is opened, and comes from GET /news/:id then. With the bodies, the
+   * list grew with every post ever written (18.5 MB for 2 000 posts).
+   */
   listAll() {
-    return this.newsRepository.find({ order: { updatedAt: 'DESC' } })
+    return this.newsRepository.find({
+      select: {
+        id: true,
+        title: true,
+        coverImage: true,
+        category: true,
+        isPublished: true,
+        isFeatured: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      order: { updatedAt: 'DESC' },
+    })
   }
 
   async getById(id: string) {
