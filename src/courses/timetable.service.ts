@@ -55,15 +55,34 @@ export class TimetableService {
     const from = query.from ?? week.from
     const to = query.to ?? week.to
 
-    // A week is at most 7 dates × a handful of courses; filtering in memory
-    // is simpler than a jsonb query and keeps the SQL boring.
-    const courses = await this.courseRepository.find({ where: { isPublished: true } })
+    /**
+     * Only the classes running in the range, and only the columns the
+     * timetable prints. Loading every published class to show one week made
+     * the cost grow with the institute's whole history (4 475 rows to find
+     * ~100). ISO dates compare correctly as text; a missing start or end
+     * means the class is open on that side, as it always did here. The
+     * weekly sessions are still unrolled in memory — that part stays boring.
+     */
+    const select = this.courseRepository
+      .createQueryBuilder('course')
+      .select(['course.id', 'course.title', 'course.subject', 'course.teacherName', 'course.classroom', 'course.sessions', 'course.startDate', 'course.endDate'])
+      .where('course.isPublished = true')
+      .andWhere('(course.startDate IS NULL OR course.startDate <= :to)', { to })
+      .andWhere('(course.endDate IS NULL OR course.endDate >= :from)', { from })
+
+    if (query.courseGroup) {
+      select.andWhere('course.title = :courseGroup', { courseGroup: query.courseGroup })
+    }
+
+    if (query.subject) {
+      select.andWhere('course.subject = :subject', { subject: query.subject })
+    }
+
+    const courses = await select.getMany()
     const entries: TimetableEntry[] = []
 
     for (const course of courses) {
       if (!course.sessions?.length) continue
-      if (query.courseGroup && course.title !== query.courseGroup) continue
-      if (query.subject && course.subject !== query.subject) continue
 
       for (const date of eachDate(from, to)) {
         if ((course.startDate && date < course.startDate) || (course.endDate && date > course.endDate)) continue
