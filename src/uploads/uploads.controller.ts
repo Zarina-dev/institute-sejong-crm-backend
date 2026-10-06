@@ -1,10 +1,11 @@
-import { BadRequestException, Controller, Post, UploadedFile, UseInterceptors } from '@nestjs/common'
+import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface'
 import { randomUUID } from 'crypto'
-import { mkdirSync } from 'fs'
+import { existsSync, mkdirSync } from 'fs'
 import { diskStorage } from 'multer'
-import { extname } from 'path'
+import type { Response } from 'express'
+import { extname, resolve } from 'path'
 
 import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
@@ -21,10 +22,27 @@ const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/
  * Attachments for 회의록. `.hwp` and `.hwpx` are what the office actually
  * writes, and Windows reports them as anything from `application/x-hwp` to
  * `application/octet-stream`, so documents are checked by extension and size
- * alone. They are never executed or rendered: stored under a random name and
- * handed back as downloads.
+ * alone. They are stored under a random name and only ever handed back to
+ * the admin (see readDocument), with a fixed type per extension.
  */
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'hwp', 'hwpx', 'txt', 'csv', 'zip', 'jpg', 'jpeg', 'png'] as const
+
+/**
+ * The type each stored document is served as — decided by its extension,
+ * never sniffed, so no upload can be turned into a page. What a browser can
+ * show inline (PDF, images, text) gets its real type; the rest are bytes.
+ */
+const DOCUMENT_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  txt: 'text/plain; charset=utf-8',
+  csv: 'text/csv; charset=utf-8',
+}
+
+/** Exactly what uploadDocument names a file: a UUID and one of the extensions above. */
+const STORED_DOCUMENT = /^[0-9a-f-]{36}\.([a-z]+)$/
 
 mkdirSync(IMAGES_DIR, { recursive: true })
 mkdirSync(DOCUMENTS_DIR, { recursive: true })
@@ -101,6 +119,41 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file', documentUploadOptions))
   uploadDocument(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/documents')
+  }
+
+  /**
+   * 회의록 attachments are internal, so unlike images they are not static
+   * files: only the admin reads them, through here. Plain links and the
+   * preview pass the token as `?token=` (see auth.guard). With `?name=`
+   * the file comes as a download under its original name — a cross-origin
+   * `<a download>` cannot rename it — otherwise inline, for the preview.
+   */
+  @Get('documents/:file')
+  @Authenticated('admin')
+  readDocument(@Param('file') file: string, @Query('name') name: string | undefined, @Res() res: Response) {
+    const match = STORED_DOCUMENT.exec(file)
+    const extension = match?.[1]
+
+    if (!extension || !DOCUMENT_EXTENSIONS.includes(extension as (typeof DOCUMENT_EXTENSIONS)[number])) {
+      throw new NotFoundException('errors.upload.notFound')
+    }
+
+    const path = resolve(DOCUMENTS_DIR, file)
+
+    if (!existsSync(path)) {
+      throw new NotFoundException('errors.upload.notFound')
+    }
+
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Cache-Control', 'private, max-age=3600')
+
+    if (name) {
+      res.download(path, name)
+      return
+    }
+
+    res.type(DOCUMENT_TYPES[extension] ?? 'application/octet-stream')
+    res.sendFile(path)
   }
 
   private describe(file: Express.Multer.File | undefined, prefix: string) {

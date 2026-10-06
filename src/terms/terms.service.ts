@@ -144,9 +144,51 @@ export class TermsService implements OnApplicationBootstrap {
     return saved
   }
 
+  /**
+   * What is filed under each semester: its classes, and the events dated in
+   * it. A semester holding either is the key the site shows them by, so it
+   * can be edited but not deleted (see remove).
+   */
+  async usage() {
+    const [courses, events] = await Promise.all([
+      this.courseRepository
+        .createQueryBuilder('course')
+        .select('course.term', 'code')
+        .addSelect('COUNT(*)', 'count')
+        .where('course.term IS NOT NULL')
+        .groupBy('course.term')
+        .getRawMany<{ code: string; count: string }>(),
+      this.eventRepository
+        .createQueryBuilder('event')
+        .select('event.termCode', 'code')
+        .addSelect('COUNT(*)', 'count')
+        .where('event.termCode IS NOT NULL')
+        .groupBy('event.termCode')
+        .getRawMany<{ code: string; count: string }>(),
+    ])
+
+    const usage: Record<string, { courses: number; events: number }> = {}
+    const entry = (code: string) => (usage[code] ??= { courses: 0, events: 0 })
+
+    for (const row of courses) entry(row.code).courses = Number(row.count)
+    for (const row of events) entry(row.code).events = Number(row.count)
+
+    return usage
+  }
+
   async remove(id: string) {
     const term = await this.getById(id)
-    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    const held = (await this.usage())[term.code]
+
+    // Deleting it would take its classes and events off the site with it —
+    // the site shows them by semester. Its dates and name can still change.
+    if (held && (held.courses > 0 || held.events > 0)) {
+      throw new BadRequestException(
+        localized('validation.term.inUse', { term: term.name || term.code, courses: held.courses, events: held.events }),
+      )
+    }
+
+    // To 최근 삭제된 항목: restorable for 30 days.
     await this.termRepository.softRemove(term)
     await this.refileEvents()
     return { success: true }

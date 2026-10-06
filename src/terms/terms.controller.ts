@@ -14,6 +14,13 @@ export class TermsController {
     return this.termsService.list()
   }
 
+  /** Admin: how many classes and events each semester holds, by code. */
+  @Get('usage')
+  @Authenticated('admin')
+  usage() {
+    return this.termsService.usage()
+  }
+
   @Post()
   @Authenticated('admin')
   create(@Body() body: CreateTermDto) {
