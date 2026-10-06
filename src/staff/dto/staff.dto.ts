@@ -38,6 +38,11 @@ export class CreateStaffDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean
+
+  /** 재직 중 (true) or 퇴직 (false). */
+  @IsOptional()
+  @IsBoolean()
+  isCurrent?: boolean
 }
 
 export class UpdateStaffDto extends PartialType(CreateStaffDto) {}

@@ -27,6 +27,15 @@ export class StaffMember {
   @Column({ type: 'int', default: 0 })
   sortOrder!: number
 
+  /**
+   * 재직 중 — whether they work at the institute now. Not the same as
+   * isPublished: a teacher who has left stays on the page, marked as former,
+   * because who taught here is part of the institute's record. Everyone on
+   * record before this existed is taken to be current.
+   */
+  @Column({ type: 'boolean', default: true })
+  isCurrent!: boolean
+
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
 

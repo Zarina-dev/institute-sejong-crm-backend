@@ -13,11 +13,11 @@ export class StaffService {
     private readonly staffRepository: Repository<StaffMember>,
   ) {}
 
-  /** Public: published members in display order. */
+  /** Public: published members — those working here now first — in display order. */
   listPublished() {
     return this.staffRepository.find({
       where: { isPublished: true },
-      order: { sortOrder: 'ASC', name: 'ASC' },
+      order: { isCurrent: 'DESC', sortOrder: 'ASC', name: 'ASC' },
     })
   }
 
@@ -44,6 +44,7 @@ export class StaffService {
       email: dto.email || null,
       sortOrder: dto.sortOrder ?? 0,
       isPublished: dto.isPublished ?? true,
+      isCurrent: dto.isCurrent ?? true,
     })
 
     return this.staffRepository.save(member)
