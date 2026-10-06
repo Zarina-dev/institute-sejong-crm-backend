@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 /** 1학기 · 2학기 · 방학 — a year holds one of each semester and any number of breaks. */
 export const TERM_KINDS = ['first', 'second', 'break'] as const
@@ -23,7 +23,9 @@ export type BreakSeason = (typeof BREAK_SEASONS)[number]
  * (여름방학, 겨울방학).
  */
 @Entity('academic_terms')
-@Index('idx_term_code', ['code'], { unique: true })
+// Unique among terms in use: a deleted term (in 최근 삭제된 항목) must not
+// block re-creating the same semester.
+@Index('idx_term_code', ['code'], { unique: true, where: '"deleted_at" IS NULL' })
 export class AcademicTerm {
   @PrimaryGeneratedColumn('uuid')
   id!: string
@@ -57,4 +59,12 @@ export class AcademicTerm {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date
+
+  /**
+   * Set when the admin deletes the record: it moves to 최근 삭제된 항목, is
+   * hidden from every normal query, and can be restored for 30 days before
+   * it is removed for good (see TrashService).
+   */
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt!: Date | null
 }

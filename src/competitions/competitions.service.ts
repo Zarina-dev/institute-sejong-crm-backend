@@ -43,7 +43,9 @@ export class CompetitionsService implements OnApplicationBootstrap {
    */
   async onApplicationBootstrap() {
     const albums = await this.albumRepository.find()
-    const records = await this.competitionRepository.find()
+    // Deleted records too: an album carried over and then deleted must not
+    // be carried over again on the next start.
+    const records = await this.competitionRepository.find({ withDeleted: true })
     const carried = new Set(records.map((record) => record.sourceAlbumId).filter(Boolean))
     let merged = 0
     let created = 0
@@ -164,9 +166,8 @@ export class CompetitionsService implements OnApplicationBootstrap {
 
   async remove(id: string) {
     const competition = await this.getById(id)
-    await this.competitionRepository.remove(competition)
-    await removeUploadedFile(competition.coverImage)
-    await Promise.all((competition.images ?? []).map((url) => removeUploadedFile(url)))
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.competitionRepository.softRemove(competition)
     return { success: true }
   }
 }

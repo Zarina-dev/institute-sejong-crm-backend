@@ -200,7 +200,8 @@ export class CoursesService {
 
   async deleteCourse(id: string) {
     const course = await this.getCourseById(id)
-    await this.courseRepository.remove(course)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.courseRepository.softRemove(course)
     return { success: true }
   }
 

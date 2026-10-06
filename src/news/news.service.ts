@@ -88,7 +88,8 @@ export class NewsService {
 
   async remove(id: string) {
     const post = await this.getById(id)
-    await this.newsRepository.remove(post)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.newsRepository.softRemove(post)
     return { success: true }
   }
 }

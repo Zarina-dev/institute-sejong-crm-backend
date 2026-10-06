@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { unlink } from 'fs/promises'
 import { ILike, IsNull, Repository } from 'typeorm'
 
 import { Course } from '../courses/entities/course.entity'
@@ -176,17 +175,10 @@ export class MaterialsService implements OnModuleInit {
 
   async deleteMaterial(id: string) {
     const material = await this.getMaterialById(id)
-    await this.materialRepository.remove(material)
-
-    // The row is gone; the file must not outlive it. Failure to unlink is
-    // logged, not surfaced — the user's delete already succeeded.
-    if (material.storageKey) {
-      await unlink(material.storageKey).catch((error: NodeJS.ErrnoException) => {
-        if (error.code !== 'ENOENT') {
-          this.logger.warn(`Could not remove file ${material.storageKey}: ${error.message}`)
-        }
-      })
-    }
+    // To 최근 삭제된 항목: restorable for 30 days. The file stays on disk until
+    // the record is purged (TrashService), or a restore would bring it back
+    // without its file.
+    await this.materialRepository.softRemove(material)
 
     return { success: true }
   }

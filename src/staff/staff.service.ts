@@ -73,11 +73,8 @@ export class StaffService implements OnApplicationBootstrap {
 
   async remove(id: string) {
     const member = await this.getById(id)
-    await this.staffRepository.remove(member)
-
-    if (member.photoUrl) {
-      await removeUploadedFile(member.photoUrl)
-    }
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.staffRepository.softRemove(member)
 
     return { success: true }
   }

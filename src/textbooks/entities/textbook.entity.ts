@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 /**
  * 교재 안내 — one row per textbook, so every entry on the public page carries
@@ -42,4 +42,12 @@ export class Textbook {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date
+
+  /**
+   * Set when the admin deletes the record: it moves to 최근 삭제된 항목, is
+   * hidden from every normal query, and can be restored for 30 days before
+   * it is removed for good (see TrashService).
+   */
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt!: Date | null
 }

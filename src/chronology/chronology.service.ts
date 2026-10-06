@@ -58,7 +58,8 @@ export class ChronologyService {
 
   async remove(id: string) {
     const entry = await this.getById(id)
-    await this.entryRepository.remove(entry)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.entryRepository.softRemove(entry)
     return { success: true }
   }
 }

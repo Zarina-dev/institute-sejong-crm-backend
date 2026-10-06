@@ -72,8 +72,8 @@ export class MeetingsService {
 
   async remove(id: string) {
     const meeting = await this.getById(id)
-    await this.meetingRepository.remove(meeting)
-    await Promise.all((meeting.attachments ?? []).map((file) => removeUploadedFile(file.url)))
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.meetingRepository.softRemove(meeting)
     return { success: true }
   }
 }

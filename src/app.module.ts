@@ -18,6 +18,7 @@ import { StaffModule } from './staff/staff.module'
 import { StudiesModule } from './studies/studies.module'
 import { TermsModule } from './terms/terms.module'
 import { TextbooksModule } from './textbooks/textbooks.module'
+import { TrashModule } from './trash/trash.module'
 import { UploadsModule } from './uploads/uploads.module'
 
 @Module({
@@ -57,6 +58,7 @@ import { UploadsModule } from './uploads/uploads.module'
     StudiesModule,
     TermsModule,
     TextbooksModule,
+    TrashModule,
     UploadsModule,
   ],
   controllers: [HealthController],

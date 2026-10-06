@@ -43,7 +43,7 @@ export class TermsService implements OnApplicationBootstrap {
    * keeps what it has: that may be the admin's deliberate choice (the week
    * before 개강 belonging to the coming semester).
    */
-  private async refileEvents() {
+  async refileEvents() {
     const terms = await this.list()
     const events = await this.eventRepository.find({ select: { id: true, startDate: true, termCode: true } })
     let moved = 0
@@ -146,7 +146,8 @@ export class TermsService implements OnApplicationBootstrap {
 
   async remove(id: string) {
     const term = await this.getById(id)
-    await this.termRepository.remove(term)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.termRepository.softRemove(term)
     await this.refileEvents()
     return { success: true }
   }
@@ -184,7 +185,7 @@ export class TermsService implements OnApplicationBootstrap {
    * not cover the same day — the answer to "which term is this?" has to be
    * a single one.
    */
-  private async assertNoOverlap(startDate: string, endDate: string, exceptId?: string) {
+  async assertNoOverlap(startDate: string, endDate: string, exceptId?: string) {
     const terms = await this.list()
     const clash = terms.find((term) => term.id !== exceptId && term.startDate <= endDate && startDate <= term.endDate)
 

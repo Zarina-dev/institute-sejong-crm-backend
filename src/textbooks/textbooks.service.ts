@@ -83,8 +83,8 @@ export class TextbooksService {
 
   async remove(id: string) {
     const textbook = await this.getById(id)
-    await this.textbookRepository.remove(textbook)
-    await removeUploadedFile(textbook.coverImage)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.textbookRepository.softRemove(textbook)
     return { success: true }
   }
 }

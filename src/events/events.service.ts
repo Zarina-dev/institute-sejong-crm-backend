@@ -69,7 +69,8 @@ export class EventsService {
 
   async remove(id: string) {
     const event = await this.getById(id)
-    await this.eventRepository.remove(event)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.eventRepository.softRemove(event)
     return { success: true }
   }
 

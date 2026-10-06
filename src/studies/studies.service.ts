@@ -115,8 +115,8 @@ export class StudiesService implements OnApplicationBootstrap {
 
   async remove(id: string) {
     const entry = await this.getById(id)
-    await this.studyRepository.remove(entry)
-    await removeUploadedFile(entry.photo)
+    // To 최근 삭제된 항목: restorable for 30 days; files stay until it is purged.
+    await this.studyRepository.softRemove(entry)
 
     return { success: true }
   }
