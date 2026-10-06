@@ -99,7 +99,8 @@ export class TermsService implements OnApplicationBootstrap {
     const code = await this.nextCode(dto.year, dto.kind)
     await this.assertNoOverlap(dto.startDate, dto.endDate)
 
-    const term = this.termRepository.create({ ...dto, code, name: dto.name ?? '' })
+    // Only a break has a season; a semester never keeps one.
+    const term = this.termRepository.create({ ...dto, code, name: dto.name ?? '', season: dto.kind === 'break' ? (dto.season ?? null) : null })
     const saved = await this.termRepository.save(term)
 
     await this.refileEvents()
@@ -118,6 +119,10 @@ export class TermsService implements OnApplicationBootstrap {
     const movedSlot = (dto.year !== undefined && dto.year !== term.year) || (dto.kind !== undefined && dto.kind !== term.kind)
 
     Object.assign(term, dto)
+
+    if (term.kind !== 'break') {
+      term.season = null
+    }
 
     // The code is the key classes already carry, so it only changes when the
     // term is actually moved to another year or kind.

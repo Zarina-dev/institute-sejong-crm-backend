@@ -5,6 +5,14 @@ export const TERM_KINDS = ['first', 'second', 'break'] as const
 export type TermKind = (typeof TERM_KINDS)[number]
 
 /**
+ * Which break it is. Set by the admin, because institutes divide the year
+ * differently — this one runs 가을방학 · 1학기 · 여름방학 · 2학기 — and the
+ * name cannot be guessed from the dates. Only breaks carry one.
+ */
+export const BREAK_SEASONS = ['spring', 'summer', 'autumn', 'winter'] as const
+export type BreakSeason = (typeof BREAK_SEASONS)[number]
+
+/**
  * 학기 — defined by the institute, not by the calendar. When a semester runs
  * is an administrative decision that moves from year to year, so the dates
  * live in this table and everything else (which term a class belongs to, what
@@ -29,6 +37,10 @@ export class AcademicTerm {
 
   @Column({ type: 'varchar', length: 20, default: 'first' })
   kind!: TermKind
+
+  /** 봄 · 여름 · 가을 · 겨울방학, for a break; null for a semester (and for breaks set up before this existed). */
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  season!: BreakSeason | null
 
   /** Optional name the institute uses ('2026학년도 1학기', '여름방학' …). */
   @Column({ type: 'varchar', length: 120, default: '' })
