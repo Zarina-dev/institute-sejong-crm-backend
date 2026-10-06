@@ -1,20 +1,64 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common'
+import { BadRequestException, Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Not, Repository } from 'typeorm'
 
 import { localized } from '../common/i18n/i18n-exception.filter'
 import { Course } from '../courses/entities/course.entity'
+import { ScheduleEvent } from '../events/entities/schedule-event.entity'
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto'
 import { AcademicTerm, type TermKind } from './entities/term.entity'
 
 @Injectable()
-export class TermsService {
+export class TermsService implements OnApplicationBootstrap {
+  private readonly logger = new Logger(TermsService.name)
+
   constructor(
     @InjectRepository(AcademicTerm)
     private readonly termRepository: Repository<AcademicTerm>,
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+    @InjectRepository(ScheduleEvent)
+    private readonly eventRepository: Repository<ScheduleEvent>,
   ) {}
+
+  /**
+   * Events filed before the semester dates last changed may carry a stale
+   * semester; correct them once on start, so existing data is right without
+   * anyone having to touch 학기 관리 first.
+   */
+  async onApplicationBootstrap() {
+    const moved = await this.refileEvents()
+
+    if (moved > 0) {
+      this.logger.log(`Re-filed ${moved} event(s) under the semester their date falls in.`)
+    }
+  }
+
+  /**
+   * 행사 일정 files each event under the semester its date falls in — decided
+   * when the event is saved. When 학기 관리 moves a semester, events saved
+   * earlier would keep the old answer, and the page would open on a semester
+   * that looks empty. So after every change to the semesters, an event whose
+   * date lies inside one is filed under it. An event outside every semester
+   * keeps what it has: that may be the admin's deliberate choice (the week
+   * before 개강 belonging to the coming semester).
+   */
+  private async refileEvents() {
+    const terms = await this.list()
+    const events = await this.eventRepository.find({ select: { id: true, startDate: true, termCode: true } })
+    let moved = 0
+
+    for (const event of events) {
+      const code = terms.find((term) => term.startDate <= event.startDate && event.startDate <= term.endDate)?.code
+
+      if (code && code !== event.termCode) {
+        await this.eventRepository.update(event.id, { termCode: code })
+        moved += 1
+      }
+    }
+
+    return moved
+  }
 
   /** Newest first, and within a year in the order they actually ran. */
   list() {
@@ -56,8 +100,11 @@ export class TermsService {
     await this.assertNoOverlap(dto.startDate, dto.endDate)
 
     const term = this.termRepository.create({ ...dto, code, name: dto.name ?? '' })
+    const saved = await this.termRepository.save(term)
 
-    return this.termRepository.save(term)
+    await this.refileEvents()
+
+    return saved
   }
 
   async update(id: string, dto: UpdateTermDto) {
@@ -87,12 +134,15 @@ export class TermsService {
       { startDate: saved.startDate, endDate: saved.endDate },
     )
 
+    await this.refileEvents()
+
     return saved
   }
 
   async remove(id: string) {
     const term = await this.getById(id)
     await this.termRepository.remove(term)
+    await this.refileEvents()
     return { success: true }
   }
 

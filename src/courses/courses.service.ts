@@ -108,6 +108,28 @@ export class CoursesService {
     return query.orderBy('course.title', 'ASC').addOrderBy('course.subject', 'ASC').getMany()
   }
 
+  /** Classes per semester — one GROUP BY on the (term, category) index. */
+  async countByTerm({ publishedOnly = false, category }: { publishedOnly?: boolean; category?: 'language' | 'culture' } = {}) {
+    const query = this.courseRepository
+      .createQueryBuilder('course')
+      .select('course.term', 'term')
+      .addSelect('count(*)', 'count')
+      .where('course.term IS NOT NULL')
+
+    if (publishedOnly) {
+      query.andWhere('course.isPublished = :isPublished', { isPublished: true })
+    }
+
+    if (category) {
+      query.andWhere('course.category = :category', { category })
+    }
+
+    const rows = await query.groupBy('course.term').getRawMany<{ term: string; count: string }>()
+
+    // count() is a bigint, which pg returns as text.
+    return rows.map((row) => ({ term: row.term, count: Number(row.count) }))
+  }
+
   async getCourseById(id: string) {
     const course = await this.courseRepository.findOne({ where: { id } })
 

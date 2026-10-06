@@ -23,6 +23,20 @@ export class CoursesController {
     })
   }
 
+  /**
+   * `GET /courses/terms?publishedOnly=true&category=culture` — how many
+   * classes each semester has, so a page's semester picker can grey out the
+   * ones it would show empty. Declared before `:id`, which would otherwise
+   * take "terms" for an id.
+   */
+  @Get('terms')
+  termCounts(@Query('publishedOnly') publishedOnly?: string, @Query('category') category?: string) {
+    return this.coursesService.countByTerm({
+      publishedOnly: publishedOnly === 'true',
+      category: category === 'language' || category === 'culture' ? category : undefined,
+    })
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.coursesService.getCourseById(id)
