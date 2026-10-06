@@ -12,6 +12,15 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api')
 
+  // First, so the static images below answer with CORS headers too: the
+  // 회의록 PDF draws the page — images included — onto a canvas, which a
+  // cross-origin image without them would taint.
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Accept-Language', 'Authorization'],
+  })
+
   // Uploaded images (news bodies, staff photos) are plain static files
   // outside the API prefix so <img src="/uploads/images/…"> just works.
   // Only that folder is public: learning materials and student documents
@@ -33,12 +42,6 @@ async function bootstrap() {
   // Every HttpException leaves through here: message keys become text in
   // the language of the request's Accept-Language header.
   app.useGlobalFilters(new I18nExceptionFilter())
-
-  app.enableCors({
-    origin: true,
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Accept-Language', 'Authorization'],
-  })
 
   await app.listen(process.env.PORT || 3000)
 }

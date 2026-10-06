@@ -5,7 +5,16 @@ import { Repository } from 'typeorm'
 import { sanitizeRichText } from '../common/sanitize'
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateMeetingDto, UpdateMeetingDto } from './dto/meeting.dto'
-import { Meeting } from './entities/meeting.entity'
+import { Meeting, type MeetingAttachment, type MeetingAttendee } from './entities/meeting.entity'
+
+/** The one-line 참석자, written from the list so the two never disagree. */
+const namesOf = (list: MeetingAttendee[]) => list.map((attendee) => attendee.name.trim()).join(', ')
+
+/** Every file a row owns: what was handed out, and the original minutes. */
+const filesOf = (meeting: { attachments?: MeetingAttachment[] | null; original?: MeetingAttachment | null }) => [
+  ...(meeting.attachments ?? []),
+  ...(meeting.original ? [meeting.original] : []),
+]
 
 @Injectable()
 export class MeetingsService {
@@ -22,7 +31,21 @@ export class MeetingsService {
    */
   list() {
     return this.meetingRepository.find({
-      select: { id: true, title: true, heldOn: true, attendees: true, attachments: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        title: true,
+        heldOn: true,
+        method: true,
+        place: true,
+        drafter: true,
+        approver: true,
+        attendees: true,
+        attendeeList: true,
+        attachments: true,
+        original: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       order: { heldOn: 'DESC', createdAt: 'DESC' },
     })
   }
@@ -41,7 +64,13 @@ export class MeetingsService {
     const meeting = this.meetingRepository.create({
       ...dto,
       title: dto.title ?? '',
-      attendees: dto.attendees ?? '',
+      method: dto.method ?? '',
+      place: dto.place ?? '',
+      drafter: dto.drafter ?? '',
+      approver: dto.approver ?? '',
+      attendeeList: dto.attendeeList ?? [],
+      attendees: dto.attendeeList ? namesOf(dto.attendeeList) : (dto.attendees ?? ''),
+      original: dto.original ?? null,
       body: sanitizeRichText(dto.body ?? ''),
       decisions: sanitizeRichText(dto.decisions ?? ''),
       attachments: dto.attachments ?? [],
@@ -52,18 +81,20 @@ export class MeetingsService {
 
   async update(id: string, dto: UpdateMeetingDto) {
     const meeting = await this.getById(id)
-    const previousFiles = meeting.attachments ?? []
+    const previousFiles = filesOf(meeting)
 
     Object.assign(meeting, dto, {
       ...(dto.body !== undefined ? { body: sanitizeRichText(dto.body) } : {}),
       ...(dto.decisions !== undefined ? { decisions: sanitizeRichText(dto.decisions) } : {}),
+      ...(dto.attendeeList !== undefined ? { attendees: namesOf(dto.attendeeList) } : {}),
     })
 
     const saved = await this.meetingRepository.save(meeting)
 
-    // Files dropped from the list should not linger on disk.
-    if (dto.attachments !== undefined) {
-      const kept = new Set(saved.attachments.map((attachment) => attachment.url))
+    // Files dropped from the row should not linger on disk. A file moved
+    // from the attachments to the original (or back) is still the row's.
+    if (dto.attachments !== undefined || dto.original !== undefined) {
+      const kept = new Set(filesOf(saved).map((file) => file.url))
       await Promise.all(previousFiles.filter((file) => !kept.has(file.url)).map((file) => removeUploadedFile(file.url)))
     }
 

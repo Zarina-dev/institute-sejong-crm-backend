@@ -71,7 +71,7 @@ export const TRASH_KINDS: TrashKind[] = [
     type: 'meetings',
     entity: Meeting,
     label: (row) => row.heldOn,
-    cleanup: (row) => removeAll((row.attachments ?? []).map((file) => file.url)),
+    cleanup: (row) => removeAll([...(row.attachments ?? []), ...(row.original ? [row.original] : [])].map((file) => file.url)),
   }),
   kind<ChronologyEntry>({ type: 'chronology', entity: ChronologyEntry, label: (row) => row.title, detail: (row) => String(row.year) }),
   kind<AcademicTerm>({ type: 'terms', entity: AcademicTerm, label: (row) => row.code, detail: (row) => `${row.startDate} ~ ${row.endDate}` }),
