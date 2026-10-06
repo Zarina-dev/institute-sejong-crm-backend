@@ -1,6 +1,8 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsEmail, IsInt, IsOptional, IsString, IsUUID, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+
 export class CreateStaffDto {
   @IsString()
   @MinLength(1, { message: 'validation.staff.nameRequired' })
@@ -39,10 +41,17 @@ export class CreateStaffDto {
   @IsBoolean()
   isPublished?: boolean
 
-  /** 재직 중 (true) or 퇴직 (false). */
+  /** 근무 시작일 — may lie ahead for someone joining next month. */
   @IsOptional()
-  @IsBoolean()
-  isCurrent?: boolean
+  @ValidateIf((_, value) => value !== null)
+  @Matches(ISO_DATE, { message: 'validation.staff.dateInvalid' })
+  startDate?: string | null
+
+  /** 퇴직일 — only for someone who has left (or is about to). */
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @Matches(ISO_DATE, { message: 'validation.staff.dateInvalid' })
+  endDate?: string | null
 }
 
 export class UpdateStaffDto extends PartialType(CreateStaffDto) {}

@@ -28,10 +28,22 @@ export class StaffMember {
   sortOrder!: number
 
   /**
-   * 재직 중 — whether they work at the institute now. Not the same as
-   * isPublished: a teacher who has left stays on the page, marked as former,
-   * because who taught here is part of the institute's record. Everyone on
-   * record before this existed is taken to be current.
+   * 근무 시작일 · 퇴직일 (ISO dates). Whether someone works here is read off
+   * these rather than switched by hand: a start in the future is 입사 예정,
+   * an end in the past is 퇴직, anything else 재직 중 — so nobody has to
+   * remember to flip a switch on someone's first or last day. Not the same
+   * as isPublished: a teacher who has left stays on the page, marked so.
+   */
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  startDate!: string | null
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  endDate!: string | null
+
+  /**
+   * Superseded by the dates. Kept only so the one-time backfill can still
+   * read who had been marked as former before the dates existed; nothing
+   * else uses it, and it can go once every row has a start date.
    */
   @Column({ type: 'boolean', default: true })
   isCurrent!: boolean
