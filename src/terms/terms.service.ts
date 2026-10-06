@@ -115,6 +115,7 @@ export class TermsService implements OnApplicationBootstrap {
 
     this.assertPeriod(startDate, endDate)
     await this.assertNoOverlap(startDate, endDate, id)
+    await this.assertEventsStayFiled(term, startDate, endDate)
 
     const movedSlot = (dto.year !== undefined && dto.year !== term.year) || (dto.kind !== undefined && dto.kind !== term.kind)
 
@@ -174,6 +175,32 @@ export class TermsService implements OnApplicationBootstrap {
     for (const row of events) entry(row.code).events = Number(row.count)
 
     return usage
+  }
+
+  /**
+   * 행사 일정 keeps each event inside one semester (EventsService.fileUnder).
+   * Shortening a semester may push some out: those another semester covers
+   * are re-filed under it afterwards (refileEvents); one that no semester
+   * would cover any more is refused here, naming the first such event.
+   */
+  private async assertEventsStayFiled(term: AcademicTerm, startDate: string, endDate: string) {
+    const others = (await this.list()).filter((other) => other.id !== term.id)
+    const covered = (from: string, to: string) =>
+      (startDate <= from && to <= endDate) || others.some((other) => other.startDate <= from && to <= other.endDate)
+
+    const events = await this.eventRepository.find({ where: { termCode: term.code }, order: { startDate: 'ASC' } })
+    const stranded = events.filter((event) => !covered(event.startDate, event.endDate ?? event.startDate))
+
+    if (stranded.length > 0) {
+      const first = stranded[0]
+      throw new BadRequestException(
+        localized('validation.term.strandsEvents', {
+          term: term.name || term.code,
+          count: stranded.length,
+          event: `${first.startDate}${first.endDate ? ` ~ ${first.endDate}` : ''} ${first.title}`,
+        }),
+      )
+    }
   }
 
   async remove(id: string) {
