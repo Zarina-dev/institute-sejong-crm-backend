@@ -7,6 +7,11 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Update
  * (정부초청장학생, 교환학생 …) and how long they went for are kept beside
  * them, because that is what the next student asks about.
  *
+ * Every text is kept twice, in Korean and in Kyrgyz — the list is read by
+ * both, and a name or a university is written differently in each script
+ * (아지모바 굴잔 / Азимова Гулжан, 경희대학교 / Кёнхи университети). The site
+ * shows the one that matches the reader, falling back to the other.
+ *
  * The number on the wall is the position in the list, not a column: it is
  * read oldest first, so a student added today simply joins the end.
  */
@@ -20,24 +25,42 @@ export class StudyAbroad {
   @Column({ type: 'int' })
   year!: number
 
-  @Column({ type: 'varchar', length: 150 })
+  /** In Korean. At least one of the two names is required. */
+  @Column({ type: 'varchar', length: 150, default: '' })
   name!: string
 
-  /** 경희대학교 · Кёнхи унив. — written the way the list is read. */
+  @Column({ type: 'varchar', length: 150, default: '' })
+  nameKy!: string
+
+  /** 경희대학교 */
   @Column({ type: 'varchar', length: 255, default: '' })
   university!: string
 
-  /** 전공 — 경영학, Менеджмент … */
+  /** Кёнхи университети */
+  @Column({ type: 'varchar', length: 255, default: '' })
+  universityKy!: string
+
+  /** 전공 — 경영학 */
   @Column({ type: 'varchar', length: 255, default: '' })
   major!: string
+
+  /** Менеджмент */
+  @Column({ type: 'varchar', length: 255, default: '' })
+  majorKy!: string
 
   /** 정부초청장학생(GKS), 교환학생, 어학연수 … — how they went. */
   @Column({ type: 'varchar', length: 255, default: '' })
   programme!: string
 
+  @Column({ type: 'varchar', length: 255, default: '' })
+  programmeKy!: string
+
   /** 1년, 4년(학사), 6개월 … — how long they went for. */
   @Column({ type: 'varchar', length: 60, default: '' })
   duration!: string
+
+  @Column({ type: 'varchar', length: 60, default: '' })
+  durationKy!: string
 
   /** Site-relative `/uploads/images/…` portrait. */
   @Column({ type: 'varchar', length: 500, nullable: true })
@@ -46,6 +69,9 @@ export class StudyAbroad {
   /** Anything else worth recording — a scholarship name, a degree earned. */
   @Column({ type: 'varchar', length: 255, default: '' })
   note!: string
+
+  @Column({ type: 'varchar', length: 255, default: '' })
+  noteKy!: string
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
