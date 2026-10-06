@@ -1,11 +1,27 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 /**
- * The two competitions the institute has always run. They are codes rather
- * than names because the site translates them; a competition added later is
- * stored under the name the admin gives it, so the list is open.
+ * The kinds of event the institute has always had: its two competitions and
+ * the occasions it used to keep photo albums for (개강식, 역사 탐방 …). They
+ * are codes rather than names because the site translates them; a kind
+ * added later is stored under the name the admin gives it, so the list is
+ * open. Since 행사 사진첩 and 대회 기록 became one record, a "competition" row
+ * is any event — participants and results are simply left empty when there
+ * are none.
  */
-export const BUILTIN_COMPETITION_KINDS = ['speech', 'writing'] as const
+export const BUILTIN_COMPETITION_KINDS = [
+  'speech',
+  'writing',
+  'foodExperience',
+  'opening',
+  'graduation',
+  'folkGames',
+  'historyTour',
+  'camp',
+  'ska',
+  'topik',
+  'other',
+] as const
 export type CompetitionKind = string
 
 /** One line of the results table: 순위 · 이름 · 비고 (반, 상품, 소속 …). */
@@ -74,6 +90,13 @@ export class Competition {
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
+
+  /**
+   * The photo album this record was carried over from, when it was — so the
+   * one-time move of 행사 사진첩 into these records never runs twice.
+   */
+  @Column({ type: 'uuid', nullable: true })
+  sourceAlbumId!: string | null
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date
