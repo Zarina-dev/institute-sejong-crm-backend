@@ -23,8 +23,8 @@ const DEV_SECRET = 'institut-dev-secret-change-me'
 export class AuthService {
   private readonly logger = new Logger(AuthService.name)
   private readonly secret: string
-  private readonly adminUsername = process.env.ADMIN_USERNAME || 'admin'
-  private readonly adminPassword = process.env.ADMIN_PASSWORD || 'admin123'
+  private readonly adminUsername = process.env.ADMIN_USERNAME
+  private readonly adminPassword = process.env.ADMIN_PASSWORD 
 
   constructor() {
     this.secret = process.env.AUTH_SECRET || DEV_SECRET

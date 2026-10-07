@@ -9,14 +9,21 @@ import { extname, resolve } from 'path'
 
 import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
+import { mediaStorage, type MediaKind } from '../storage/media-storage'
 
 export const IMAGES_DIR = './uploads/images'
+export const VIDEOS_DIR = './uploads/videos'
 export const DOCUMENTS_DIR = './uploads/documents'
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 export const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
+/** A few minutes of phone video; anything longer belongs on a video site. */
+export const MAX_VIDEO_SIZE = 300 * 1024 * 1024
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'] as const
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/
+
+const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v'] as const
+const VIDEO_MIME = /^video\/(mp4|webm|quicktime|x-m4v)$/
 
 /**
  * Attachments for 회의록. `.hwp` and `.hwpx` are what the office actually
@@ -45,6 +52,7 @@ const DOCUMENT_TYPES: Record<string, string> = {
 const STORED_DOCUMENT = /^[0-9a-f-]{36}\.([a-z]+)$/
 
 mkdirSync(IMAGES_DIR, { recursive: true })
+mkdirSync(VIDEOS_DIR, { recursive: true })
 mkdirSync(DOCUMENTS_DIR, { recursive: true })
 
 /**
@@ -52,18 +60,24 @@ mkdirSync(DOCUMENTS_DIR, { recursive: true })
  * extension *and* declared mime type must both match — either alone is
  * trivial to spoof.
  */
-function uploadOptions(dir: string, extensions: readonly string[], mime: RegExp): MulterOptions {
+function uploadOptions(
+  dir: string,
+  extensions: readonly string[],
+  mime: RegExp,
+  maxSize: number,
+  typeMessage: 'validation.image.type' | 'validation.video.type',
+): MulterOptions {
   return {
     storage: diskStorage({
       destination: dir,
       filename: (_req, file, cb) => cb(null, `${randomUUID()}${extname(file.originalname || '').toLowerCase()}`),
     }),
-    limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
+    limits: { fileSize: maxSize, files: 1 },
     fileFilter: (_req, file, cb) => {
       const ext = extname(file.originalname || '').toLowerCase().slice(1)
 
       if (!extensions.includes(ext) || !mime.test(file.mimetype)) {
-        cb(new BadRequestException(localized('validation.image.type', { allowed: extensions.map((e) => `.${e}`).join(', ') })), false)
+        cb(new BadRequestException(localized(typeMessage, { allowed: extensions.map((e) => `.${e}`).join(', ') })), false)
         return
       }
 
@@ -72,7 +86,8 @@ function uploadOptions(dir: string, extensions: readonly string[], mime: RegExp)
   }
 }
 
-const imageUploadOptions = uploadOptions(IMAGES_DIR, IMAGE_EXTENSIONS, IMAGE_MIME)
+const imageUploadOptions = uploadOptions(IMAGES_DIR, IMAGE_EXTENSIONS, IMAGE_MIME, MAX_UPLOAD_SIZE, 'validation.image.type')
+const videoUploadOptions = uploadOptions(VIDEOS_DIR, VIDEO_EXTENSIONS, VIDEO_MIME, MAX_VIDEO_SIZE, 'validation.video.type')
 
 /** Same storage as images, extension-only check, and a larger cap. */
 const documentUploadOptions: MulterOptions = {
@@ -105,12 +120,20 @@ const documentUploadOptions: MulterOptions = {
  */
 @Controller('uploads')
 export class UploadsController {
-  /** Rich-text images, news covers, staff photos. */
+  /** Rich-text images, news covers, staff photos — to R2 when it is configured. */
   @Post('images')
   @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
-    return this.describe(file, '/uploads/images')
+    return this.storeMedia('images', file)
+  }
+
+  /** Videos (mp4, webm, mov) — to R2 when it is configured, streamed in parts. */
+  @Post('videos')
+  @Authenticated('admin')
+  @UseInterceptors(FileInterceptor('file', videoUploadOptions))
+  uploadVideo(@UploadedFile() file?: Express.Multer.File) {
+    return this.storeMedia('videos', file)
   }
 
   /** 회의록 attachments — .hwp, .pdf and the Office formats. */
@@ -154,6 +177,17 @@ export class UploadsController {
 
     res.type(DOCUMENT_TYPES[extension] ?? 'application/octet-stream')
     res.sendFile(path)
+  }
+
+  /**
+   * Multer has the file on this server's disk; with R2 it moves there and
+   * the local copy goes. The answer is the same either way —
+   * `/uploads/<kind>/<file>` — which is what records store.
+   */
+  private async storeMedia(kind: MediaKind, file: Express.Multer.File | undefined) {
+    const described = this.describe(file, `/uploads/${kind}`)
+    await mediaStorage().store(kind, file!.path, file!.filename, file!.mimetype)
+    return described
   }
 
   private describe(file: Express.Multer.File | undefined, prefix: string) {
