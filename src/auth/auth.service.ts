@@ -24,7 +24,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name)
   private readonly secret: string
   private readonly adminUsername = process.env.ADMIN_USERNAME
-  private readonly adminPassword = process.env.ADMIN_PASSWORD 
+  private readonly adminPassword = process.env.ADMIN_PASSWORD
 
   constructor() {
     this.secret = process.env.AUTH_SECRET || DEV_SECRET
@@ -32,11 +32,20 @@ export class AuthService {
     if (this.secret === DEV_SECRET) {
       this.logger.warn('AUTH_SECRET is not set — using the development secret. Set it before deploying.')
     }
+
+    // There is no built-in account: without these nobody can sign in, and
+    // the login form would only say "wrong password". Say why, at start.
+    if (!this.adminUsername || !this.adminPassword) {
+      this.logger.error('ADMIN_USERNAME and ADMIN_PASSWORD are not set — the admin panel cannot be signed in to. Set them in backend/.env.')
+    }
   }
 
   /** The site has one account: the administrator, from the environment. */
   login(username: string, password: string) {
-    if (username !== this.adminUsername || !this.safeEqual(password, this.adminPassword)) {
+    const { adminUsername, adminPassword } = this
+
+    // No account configured: nobody signs in (see the error logged at start).
+    if (!adminUsername || !adminPassword || username !== adminUsername || !this.safeEqual(password, adminPassword)) {
       throw new UnauthorizedException('errors.login.invalid')
     }
 
