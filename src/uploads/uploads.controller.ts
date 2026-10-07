@@ -1,19 +1,14 @@
 import { BadRequestException, Controller, Get, NotFoundException, Param, Post, Query, Res, UploadedFile, UseInterceptors } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
 import type { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface'
-import { randomUUID } from 'crypto'
-import { existsSync, mkdirSync } from 'fs'
-import { diskStorage } from 'multer'
 import type { Response } from 'express'
-import { extname, resolve } from 'path'
+import { extname } from 'path'
 
 import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
-import { mediaStorage, type MediaKind } from '../storage/media-storage'
+import { R2MulterStorage } from '../storage/r2-multer-storage'
+import { r2Storage } from '../storage/r2-storage.service'
 
-export const IMAGES_DIR = './uploads/images'
-export const VIDEOS_DIR = './uploads/videos'
-export const DOCUMENTS_DIR = './uploads/documents'
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 export const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
 /** A few minutes of phone video; anything longer belongs on a video site. */
@@ -29,114 +24,103 @@ const VIDEO_MIME = /^video\/(mp4|webm|quicktime|x-m4v)$/
  * Attachments for 회의록. `.hwp` and `.hwpx` are what the office actually
  * writes, and Windows reports them as anything from `application/x-hwp` to
  * `application/octet-stream`, so documents are checked by extension and size
- * alone. They are stored under a random name and only ever handed back to
- * the admin (see readDocument), with a fixed type per extension.
+ * alone. They live in the private bucket and are only ever handed to the
+ * admin (see readDocument).
  */
 const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'hwp', 'hwpx', 'txt', 'csv', 'zip', 'jpg', 'jpeg', 'png'] as const
 
 /**
- * The type each stored document is served as — decided by its extension,
- * never sniffed, so no upload can be turned into a page. What a browser can
- * show inline (PDF, images, text) gets its real type; the rest are bytes.
+ * The type a document is stored and served as — decided by its extension,
+ * never by what the browser claimed, so no upload can be turned into a page.
+ * What a browser can show inline (PDF, images, text) gets its real type.
  */
-const DOCUMENT_TYPES: Record<string, string> = {
-  pdf: 'application/pdf',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  png: 'image/png',
-  txt: 'text/plain; charset=utf-8',
-  csv: 'text/csv; charset=utf-8',
+export function documentType(extension: string) {
+  const types: Record<string, string> = {
+    pdf: 'application/pdf',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    txt: 'text/plain; charset=utf-8',
+    csv: 'text/csv; charset=utf-8',
+  }
+  return types[extension] ?? 'application/octet-stream'
 }
 
-/** Exactly what uploadDocument names a file: a UUID and one of the extensions above. */
-const STORED_DOCUMENT = /^[0-9a-f-]{36}\.([a-z]+)$/
+/** Exactly what an upload is named: a UUID and one of the extensions above. */
+const STORED_DOCUMENT = /^[0-9a-f-]{36}\.([a-z0-9]+)$/
 
-mkdirSync(IMAGES_DIR, { recursive: true })
-mkdirSync(VIDEOS_DIR, { recursive: true })
-mkdirSync(DOCUMENTS_DIR, { recursive: true })
+const extensionOf = (name: string) =>
+  extname(name || '')
+    .toLowerCase()
+    .slice(1)
 
 /**
- * Disk storage with a random file name and a double check on the type:
- * extension *and* declared mime type must both match — either alone is
- * trivial to spoof.
+ * Straight to R2 (R2MulterStorage), never to this server's disk. Extension
+ * *and* declared MIME type are checked before a byte is stored — either
+ * alone is trivial to spoof.
  */
-function uploadOptions(
-  dir: string,
+function mediaUploadOptions(
+  kind: 'images' | 'videos',
   extensions: readonly string[],
   mime: RegExp,
   maxSize: number,
   typeMessage: 'validation.image.type' | 'validation.video.type',
 ): MulterOptions {
   return {
-    storage: diskStorage({
-      destination: dir,
-      filename: (_req, file, cb) => cb(null, `${randomUUID()}${extname(file.originalname || '').toLowerCase()}`),
-    }),
+    storage: new R2MulterStorage(kind),
     limits: { fileSize: maxSize, files: 1 },
     fileFilter: (_req, file, cb) => {
-      const ext = extname(file.originalname || '').toLowerCase().slice(1)
-
-      if (!extensions.includes(ext) || !mime.test(file.mimetype)) {
+      if (!extensions.includes(extensionOf(file.originalname)) || !mime.test(file.mimetype)) {
         cb(new BadRequestException(localized(typeMessage, { allowed: extensions.map((e) => `.${e}`).join(', ') })), false)
         return
       }
-
       cb(null, true)
     },
   }
 }
 
-const imageUploadOptions = uploadOptions(IMAGES_DIR, IMAGE_EXTENSIONS, IMAGE_MIME, MAX_UPLOAD_SIZE, 'validation.image.type')
-const videoUploadOptions = uploadOptions(VIDEOS_DIR, VIDEO_EXTENSIONS, VIDEO_MIME, MAX_VIDEO_SIZE, 'validation.video.type')
+const imageUploadOptions = mediaUploadOptions('images', IMAGE_EXTENSIONS, IMAGE_MIME, MAX_UPLOAD_SIZE, 'validation.image.type')
+const videoUploadOptions = mediaUploadOptions('videos', VIDEO_EXTENSIONS, VIDEO_MIME, MAX_VIDEO_SIZE, 'validation.video.type')
 
-/** Same storage as images, extension-only check, and a larger cap. */
 const documentUploadOptions: MulterOptions = {
-  storage: diskStorage({
-    destination: DOCUMENTS_DIR,
-    filename: (_req, file, cb) => cb(null, `${randomUUID()}${extname(file.originalname || '').toLowerCase()}`),
-  }),
+  storage: new R2MulterStorage('documents', (name) => documentType(extensionOf(name))),
   limits: { fileSize: MAX_DOCUMENT_SIZE, files: 1 },
   fileFilter: (_req, file, cb) => {
-    const ext = extname(file.originalname || '')
-      .toLowerCase()
-      .slice(1)
-
+    const ext = extensionOf(file.originalname)
     if (!DOCUMENT_EXTENSIONS.includes(ext as (typeof DOCUMENT_EXTENSIONS)[number])) {
       const allowed = DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(', ')
       cb(new BadRequestException(localized('validation.material.fileType', { ext, allowed })), false)
       return
     }
-
     cb(null, true)
   },
 }
 
 /**
- * Image intake. The route answers `{ url, name, size, type }` where
- * `url` is site-relative (`/uploads/<kind>/<uuid>.<ext>`) — files are served
- * statically from `/uploads/…` (see main.ts), outside the `/api` prefix. The
- * caller stores the returned path on its own record; the owning service is
- * responsible for unlinking it when the record drops the reference.
+ * File intake. Every route answers `{ url, name, size, type }`: `url` is the
+ * site-relative `/uploads/<kind>/<uuid>.<ext>` the caller stores on its
+ * record (its R2 key is the same without `/uploads/`); `name` is the
+ * admin's own file name, kept for display and download.
  */
 @Controller('uploads')
 export class UploadsController {
-  /** Rich-text images, news covers, staff photos — to R2 when it is configured. */
+  /** Rich-text images, news covers, staff photos — the public bucket. */
   @Post('images')
   @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
-    return this.storeMedia('images', file)
+    return this.describe(file, '/uploads/images')
   }
 
-  /** Videos (mp4, webm, mov) — to R2 when it is configured, streamed in parts. */
+  /** Videos (mp4, webm, mov) — the public bucket, streamed in parts. */
   @Post('videos')
   @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', videoUploadOptions))
   uploadVideo(@UploadedFile() file?: Express.Multer.File) {
-    return this.storeMedia('videos', file)
+    return this.describe(file, '/uploads/videos')
   }
 
-  /** 회의록 attachments — .hwp, .pdf and the Office formats. */
+  /** 회의록 attachments — .hwp, .pdf and the Office formats; the private bucket. */
   @Post('documents')
   @Authenticated('admin')
   @UseInterceptors(FileInterceptor('file', documentUploadOptions))
@@ -145,49 +129,30 @@ export class UploadsController {
   }
 
   /**
-   * 회의록 attachments are internal, so unlike images they are not static
-   * files: only the admin reads them, through here. Plain links and the
-   * preview pass the token as `?token=` (see auth.guard). With `?name=`
-   * the file comes as a download under its original name — a cross-origin
-   * `<a download>` cannot rename it — otherwise inline, for the preview.
+   * 회의록 attachments are internal: only the admin reads them, through here.
+   * Plain links and the preview pass the token as `?token=` (see auth.guard).
+   * The answer is a redirect to a signed R2 link valid for five minutes —
+   * the bucket itself is not public, so knowing a file's name is not enough.
+   * With `?name=` the file downloads under its original name, otherwise it
+   * opens inline, for the preview.
    */
   @Get('documents/:file')
   @Authenticated('admin')
-  readDocument(@Param('file') file: string, @Query('name') name: string | undefined, @Res() res: Response) {
-    const match = STORED_DOCUMENT.exec(file)
-    const extension = match?.[1]
+  async readDocument(@Param('file') file: string, @Query('name') name: string | undefined, @Res() res: Response) {
+    const extension = STORED_DOCUMENT.exec(file)?.[1]
 
     if (!extension || !DOCUMENT_EXTENSIONS.includes(extension as (typeof DOCUMENT_EXTENSIONS)[number])) {
       throw new NotFoundException('errors.upload.notFound')
     }
 
-    const path = resolve(DOCUMENTS_DIR, file)
-
-    if (!existsSync(path)) {
+    const storage = r2Storage()
+    if (!(await storage.head('documents', file))) {
       throw new NotFoundException('errors.upload.notFound')
     }
 
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.setHeader('Cache-Control', 'private, max-age=3600')
-
-    if (name) {
-      res.download(path, name)
-      return
-    }
-
-    res.type(DOCUMENT_TYPES[extension] ?? 'application/octet-stream')
-    res.sendFile(path)
-  }
-
-  /**
-   * Multer has the file on this server's disk; with R2 it moves there and
-   * the local copy goes. The answer is the same either way —
-   * `/uploads/<kind>/<file>` — which is what records store.
-   */
-  private async storeMedia(kind: MediaKind, file: Express.Multer.File | undefined) {
-    const described = this.describe(file, `/uploads/${kind}`)
-    await mediaStorage().store(kind, file!.path, file!.filename, file!.mimetype)
-    return described
+    const url = await storage.signedUrl('documents', file, { name: name || file, inline: !name, contentType: documentType(extension) })
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.redirect(302, url)
   }
 
   private describe(file: Express.Multer.File | undefined, prefix: string) {

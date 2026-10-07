@@ -9,12 +9,13 @@
     "start": "node dist/main",
     "typecheck": "tsc --noEmit",
     "db": "node scripts/local-db.mjs",
-    "media:to-r2": "node dist/storage/upload-local-media.js",
-    "media:sweep": "node dist/storage/sweep-media.js"
+    "media:sweep": "node dist/storage/sweep-media.js",
+    "uploads:migrate": "node dist/scripts/migrate-uploads-to-r2.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",
     "@aws-sdk/lib-storage": "^3.1147.0",
+    "@aws-sdk/s3-request-presigner": "^3.1147.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",

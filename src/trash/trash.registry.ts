@@ -1,8 +1,9 @@
-import { unlink } from 'fs/promises'
 import type { ObjectLiteral } from 'typeorm'
 
 import { ChronologyEntry } from '../chronology/entities/chronology-entry.entity'
 import { removeUploadedFile } from '../common/uploaded-files'
+import { materialFile } from '../materials/upload.config'
+import { r2Storage } from '../storage/r2-storage.service'
 import { Competition } from '../competitions/entities/competition.entity'
 import { Course } from '../courses/entities/course.entity'
 import { ScheduleEvent } from '../events/entities/schedule-event.entity'
@@ -64,8 +65,11 @@ export const TRASH_KINDS: TrashKind[] = [
     entity: LearningMaterial,
     label: (row) => row.title,
     detail: (row) => row.originalFileName,
-    // Materials live on disk under uploads/materials, not as site URLs.
-    cleanup: (row) => (row.storageKey ? unlink(row.storageKey).catch(() => undefined) : Promise.resolve()),
+    // A material's file is named by storageKey (materials/<uuid>.<ext>), not a site URL.
+    cleanup: (row) => {
+      const file = materialFile(row.storageKey)
+      return file ? r2Storage().remove('materials', file) : Promise.resolve()
+    },
   }),
   kind<Meeting>({
     type: 'meetings',

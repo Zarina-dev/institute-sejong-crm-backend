@@ -21,7 +21,8 @@ import type { AuthUser } from '../auth/auth.service'
 import { CreateMaterialDto } from './dto/create-material.dto'
 import { UpdateMaterialDto } from './dto/update-material.dto'
 import { MaterialsService, type MaterialsQuery } from './materials.service'
-import { materialUploadOptions } from './upload.config'
+import { r2Storage } from '../storage/r2-storage.service'
+import { materialFile, materialType, materialUploadOptions } from './upload.config'
 
 /**
  * 학습자료실: the list and the download are public (the site has no student
@@ -46,11 +47,23 @@ export class MaterialsController {
   async download(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const material = await this.materialsService.getMaterialById(id)
 
-    if (!material.isPublished || !material.storageKey) {
+    const file = materialFile(material.storageKey)
+
+    if (!material.isPublished || !file) {
       throw new NotFoundException('errors.material.notAvailable')
     }
 
-    res.download(material.storageKey, material.originalFileName ?? material.title)
+    // The private bucket is not readable by URL: the download is a signed
+    // link, valid for five minutes, issued only for a published material.
+    const storage = r2Storage()
+    if (!(await storage.head('materials', file))) {
+      throw new NotFoundException('errors.material.notAvailable')
+    }
+
+    const name = material.originalFileName ?? material.title
+    const url = await storage.signedUrl('materials', file, { name, contentType: materialType(name) })
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.redirect(302, url)
   }
 
   @Post()

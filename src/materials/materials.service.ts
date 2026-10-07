@@ -117,7 +117,8 @@ export class MaterialsService implements OnModuleInit {
         fileType: item.fileType,
         fileSize: item.fileSize,
         originalFileName: item.originalFileName,
-        storageKey: item.storageKey,
+        // Whether there is a file to download; where it is stays server-side.
+        hasFile: Boolean(item.storageKey),
         thumbnailUrl: item.thumbnailUrl,
         isPublished: item.isPublished,
         createdAt: item.createdAt,
@@ -149,8 +150,10 @@ export class MaterialsService implements OnModuleInit {
       course: course.title,
       description: dto.description ?? null,
       isPublished: dto.isPublished ?? false,
-      storageKey: file?.path ?? null,
-      originalFileName: file?.originalname ?? null,
+      // R2 key in the private bucket (R2MulterStorage sets path to it).
+      storageKey: file ? `materials/${file.filename}` : null,
+      // Multer decodes the name as latin1; restore UTF-8 so Korean and Cyrillic names survive.
+      originalFileName: file ? Buffer.from(file.originalname, 'latin1').toString('utf8') : null,
       fileType: file?.mimetype ?? null,
       fileSize: file?.size ?? null,
     })

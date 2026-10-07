@@ -7,7 +7,7 @@ import type { NextFunction, Request, Response } from 'express'
 
 import { AppModule } from './app.module'
 import { I18nExceptionFilter } from './common/i18n/i18n-exception.filter'
-import { MEDIA_KINDS, mediaStorage, parseMediaUrl } from './storage/media-storage'
+import { MEDIA_KINDS, parseMediaUrl, r2Storage } from './storage/r2-storage.service'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
@@ -35,7 +35,8 @@ async function bootstrap() {
   // same path answers with a permanent redirect to its public address, so
   // every stored /uploads/… path keeps working. The site itself links to R2
   // directly (VITE_MEDIA_BASE_URL) and skips this hop.
-  const storage = mediaStorage()
+  // Created here so a missing R2 setting stops the API at start.
+  const storage = r2Storage()
   app.use((request: Request, response: Response, next: NextFunction) => {
     const media = request.method === 'GET' || request.method === 'HEAD' ? parseMediaUrl(request.path) : null
     const target = media ? storage.publicUrl(media.kind, media.file) : null
