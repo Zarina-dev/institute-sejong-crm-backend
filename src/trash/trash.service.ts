@@ -104,12 +104,14 @@ export class TrashService implements OnApplicationBootstrap, OnApplicationShutdo
 
     for (const kind of TRASH_KINDS) {
       const rows = await this.repository(kind).find({ withDeleted: true, where: { deletedAt: LessThan(cutoff) } })
+      if (rows.length === 0) continue
 
+      // One DELETE for the kind; then each record's files, which are objects of their own.
+      await this.repository(kind).delete(rows.map((row) => row.id as string))
       for (const row of rows) {
-        await this.repository(kind).delete(row.id)
         await kind.cleanup?.(row)
-        purged += 1
       }
+      purged += rows.length
     }
 
     if (purged > 0) {

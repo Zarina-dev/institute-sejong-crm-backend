@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
+import { databaseOptions } from './database/database.options'
+
 import { AuthModule } from './auth/auth.module'
 import { ChronologyModule } from './chronology/chronology.module'
 import { CompetitionsModule } from './competitions/competitions.module'
@@ -30,19 +32,14 @@ import { UploadsModule } from './uploads/uploads.module'
       // from backend/ (or via the root scripts, which do that for you).
       envFilePath: ['.env', '.env.local'],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: Number(process.env.DB_PORT || 5432),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'institut',
-      // Development convenience: the schema is created/altered from the
-      // entities on boot. Replace with migrations before production — it
-      // can drop columns and it has no rollback.
-      synchronize: true,
-      autoLoadEntities: true,
-      logging: ['error'],
+    // forRootAsync: built after ConfigModule has read .env.
+    TypeOrmModule.forRootAsync({
+      useFactory: () => ({
+        ...databaseOptions(),
+        autoLoadEntities: true,
+        // Pending migrations are applied before the API starts serving.
+        migrationsRun: true,
+      }),
     }),
     AuthModule,
     MaterialsModule,

@@ -44,20 +44,24 @@ export class TermsService implements OnApplicationBootstrap {
    * before 개강 belonging to the coming semester).
    */
   async refileEvents() {
-    const terms = await this.list()
-    const events = await this.eventRepository.find({ select: { id: true, startDate: true, termCode: true } })
-    let moved = 0
+    // One statement instead of an UPDATE per event. Dates are ISO strings,
+    // which compare correctly as text; semesters never overlap (see
+    // assertNoOverlap), so a date matches at most one. Deleted events and
+    // semesters are left out, as the repository queries did.
+    const moved = await this.eventRepository.query<Array<{ id: string }>>(
+      `UPDATE "schedule_events" AS event
+          SET "termCode" = term."code", "updated_at" = now()
+         FROM "academic_terms" AS term
+        WHERE term."deleted_at" IS NULL
+          AND event."deleted_at" IS NULL
+          AND event."startDate" BETWEEN term."startDate" AND term."endDate"
+          AND event."termCode" IS DISTINCT FROM term."code"
+    RETURNING event."id"`,
+    )
 
-    for (const event of events) {
-      const code = terms.find((term) => term.startDate <= event.startDate && event.startDate <= term.endDate)?.code
-
-      if (code && code !== event.termCode) {
-        await this.eventRepository.update(event.id, { termCode: code })
-        moved += 1
-      }
-    }
-
-    return moved
+    // The postgres driver answers an UPDATE … RETURNING with [rows, count].
+    const rows = Array.isArray(moved[0]) ? (moved[0] as unknown as Array<{ id: string }>) : moved
+    return rows.length
   }
 
   /** Newest first, and within a year in the order they actually ran. */
