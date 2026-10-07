@@ -3,9 +3,9 @@
 # ---- Build output ----------------------------------------------------------
 dist/
 
-# ---- Runtime uploads: user content, never source. Keep the folder. --------
-uploads/*
-!uploads/.gitkeep
+# Stored files live in Cloudflare R2; a stray local uploads/ (e.g. an old
+# checkout being migrated with npm run uploads:migrate) is never committed.
+uploads/
 
 # ---- Local PostgreSQL data if docker-compose is bind-mounted --------------
 pgdata/

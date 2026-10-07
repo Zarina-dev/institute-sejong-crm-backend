@@ -1,8 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common'
 import { InjectDataSource } from '@nestjs/typeorm'
-import { readdirSync, statSync } from 'fs'
-import { unlink } from 'fs/promises'
-import { join } from 'path'
 import { DataSource } from 'typeorm'
 
 import { r2Storage, STORED_KINDS, type StoredKind } from './r2-storage.service'
@@ -16,15 +13,15 @@ const REFERENCE = /(images|videos|documents|materials)[\\/]([0-9a-f]{8}-[0-9a-f]
 
 export type SweepResult = {
   referenced: number
-  removed: Array<{ kind: StoredKind; file: string; where: 'R2' | 'disk' }>
+  removed: Array<{ kind: StoredKind; file: string; bucket: string }>
   kept: number
   skipped?: string
 }
 
 /**
  * Removes stored files — images, videos, documents, materials — that no
- * record uses any more, from both R2 buckets and from this server's disk. Most files are removed the moment a record lets go of
- * them (a purge from 최근 삭제된 항목, a replaced photo), but some never were:
+ * record uses any more, from both R2 buckets. Most files are removed the
+ * moment a record lets go of them (a purge from 최근 삭제된 항목, a replaced photo), but some never were:
  * an image taken out of a rich text, a post's old cover, a file uploaded into
  * a form that was then closed. This catches every such case the same way.
  *
@@ -86,44 +83,21 @@ export class MediaSweepService implements OnApplicationBootstrap, OnApplicationS
     const cutoff = Date.now() - GRACE
 
     for (const kind of STORED_KINDS) {
-      const stored: Array<{ file: string; modified: Date; where: 'R2' | 'disk' }> = [
-        ...(await storage.list(kind)).map((entry) => ({ ...entry, where: 'R2' as const })),
-        ...localFiles(kind).map((entry) => ({ ...entry, where: 'disk' as const })),
-      ]
-
-      for (const entry of stored) {
+      for (const entry of await storage.list(kind)) {
         if (referenced.has(entry.file.toLowerCase()) || entry.modified.getTime() > cutoff) {
           result.kept += 1
           continue
         }
 
-        result.removed.push({ kind, file: entry.file, where: entry.where })
-        if (dryRun) continue
-
-        if (entry.where === 'R2') {
-          await storage.remove(kind, entry.file)
-        } else {
-          await unlink(join('uploads', kind, entry.file)).catch(() => undefined)
-        }
+        result.removed.push({ kind, file: entry.file, bucket: storage.bucketFor(kind) })
+        if (!dryRun) await storage.remove(kind, entry.file)
       }
     }
 
     if (result.removed.length > 0 && !dryRun) {
-      this.logger.log(`Removed ${result.removed.length} image/video file(s) no record uses.`)
+      this.logger.log(`Removed ${result.removed.length} stored file(s) no record uses.`)
     }
 
     return result
-  }
-}
-
-function localFiles(kind: StoredKind) {
-  const dir = join('uploads', kind)
-  try {
-    return readdirSync(dir)
-      .map((file) => ({ file, stat: statSync(join(dir, file)) }))
-      .filter(({ stat }) => stat.isFile())
-      .map(({ file, stat }) => ({ file, modified: stat.mtime }))
-  } catch {
-    return []
   }
 }
