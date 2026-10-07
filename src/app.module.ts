@@ -18,6 +18,7 @@ import { StaffModule } from './staff/staff.module'
 import { StudiesModule } from './studies/studies.module'
 import { TermsModule } from './terms/terms.module'
 import { TextbooksModule } from './textbooks/textbooks.module'
+import { StorageModule } from './storage/storage.module'
 import { TrashModule } from './trash/trash.module'
 import { UploadsModule } from './uploads/uploads.module'
 
@@ -59,6 +60,7 @@ import { UploadsModule } from './uploads/uploads.module'
     TermsModule,
     TextbooksModule,
     TrashModule,
+    StorageModule,
     UploadsModule,
   ],
   controllers: [HealthController],

@@ -1,4 +1,4 @@
-import { DeleteObjectCommand, HeadObjectCommand, PutBucketCorsCommand, S3Client } from '@aws-sdk/client-s3'
+import { DeleteObjectCommand, HeadObjectCommand, ListObjectsV2Command, PutBucketCorsCommand, S3Client } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 import { Logger } from '@nestjs/common'
 import { createReadStream } from 'fs'
@@ -19,6 +19,20 @@ type R2Config = { endpoint: string; bucket: string; accessKeyId: string; secretA
 const R2_VARIABLES = ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PUBLIC_URL'] as const
 
 /**
+ * Just the scheme and host. The dashboard shows the S3 API address with the
+ * bucket on the end (…r2.cloudflarestorage.com/<bucket>); pasted as is, the
+ * client would address the bucket twice.
+ */
+function endpointOrigin(value: string | undefined) {
+  if (!value) return ''
+  try {
+    return new URL(value).origin
+  } catch {
+    throw new Error(`R2_ENDPOINT is not a URL: ${value}`)
+  }
+}
+
+/**
  * R2 settings from the environment, or null when none are set (media then
  * stays on this server's disk, as in development). A half-filled set is an
  * error rather than a silent fallback: uploads would land on a disk the
@@ -33,7 +47,7 @@ function readR2Config(): R2Config | null {
   }
 
   const missing = R2_VARIABLES.filter((name) => !env[name]?.trim())
-  const endpoint = env.R2_ENDPOINT?.trim() || (env.R2_ACCOUNT_ID?.trim() ? `https://${env.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com` : '')
+  const endpoint = endpointOrigin(env.R2_ENDPOINT?.trim()) || (env.R2_ACCOUNT_ID?.trim() ? `https://${env.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com` : '')
 
   if (missing.length > 0 || !endpoint) {
     throw new Error(`Cloudflare R2 is half configured — set ${[...missing, ...(endpoint ? [] : ['R2_ACCOUNT_ID'])].join(', ')} (see .env.example).`)
@@ -128,6 +142,24 @@ export class MediaStorage {
     } catch {
       return false
     }
+  }
+
+  /** Every file R2 holds under a kind, with when it was stored — for the orphan sweep. */
+  async list(kind: MediaKind) {
+    const files: Array<{ file: string; modified: Date }> = []
+    if (!this.client || !this.config) return files
+
+    let token: string | undefined
+    do {
+      const page = await this.client.send(new ListObjectsV2Command({ Bucket: this.config.bucket, Prefix: `${kind}/`, ContinuationToken: token }))
+      for (const object of page.Contents ?? []) {
+        const file = object.Key?.slice(kind.length + 1)
+        if (file && !file.includes('/')) files.push({ file, modified: object.LastModified ?? new Date() })
+      }
+      token = page.IsTruncated ? page.NextContinuationToken : undefined
+    } while (token)
+
+    return files
   }
 
   /** Removes a file from R2 (the caller removes any local copy). Best-effort, like every file cleanup here. */
