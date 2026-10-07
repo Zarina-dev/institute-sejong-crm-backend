@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { databaseOptions } from './database/database.options'
 
+import { AuditModule } from './audit/audit.module'
 import { AuthModule } from './auth/auth.module'
 import { ChronologyModule } from './chronology/chronology.module'
 import { CompetitionsModule } from './competitions/competitions.module'
@@ -42,6 +43,7 @@ import { UploadsModule } from './uploads/uploads.module'
       }),
     }),
     AuthModule,
+    AuditModule,
     MaterialsModule,
     CoursesModule,
     DashboardModule,

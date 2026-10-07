@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException, OnApplicati
 import { InjectDataSource } from '@nestjs/typeorm'
 import { DataSource, IsNull, LessThan, Not } from 'typeorm'
 
+import { AuditService } from '../audit/audit.service'
 import { localized } from '../common/i18n/i18n-exception.filter'
 import { AcademicTerm } from '../terms/entities/term.entity'
 import { TermsService } from '../terms/terms.service'
@@ -28,6 +29,7 @@ export class TrashService implements OnApplicationBootstrap, OnApplicationShutdo
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly termsService: TermsService,
+    private readonly audit: AuditService,
   ) {}
 
   async onApplicationBootstrap() {
@@ -110,6 +112,8 @@ export class TrashService implements OnApplicationBootstrap, OnApplicationShutdo
       await this.repository(kind).delete(rows.map((row) => row.id as string))
       for (const row of rows) {
         await kind.cleanup?.(row)
+        // Nobody pressed a button: the journal names the system as the actor.
+        await this.audit.record({ actor: 'system', action: 'purge', entityType: kind.type, entityId: row.id as string, label: kind.label(row) })
       }
       purged += rows.length
     }
