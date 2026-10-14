@@ -19,6 +19,7 @@ import { MeetingsModule } from './meetings/meetings.module'
 import { NewsModule } from './news/news.module'
 import { StaffModule } from './staff/staff.module'
 import { StudiesModule } from './studies/studies.module'
+import { GraduatesModule } from './graduates/graduates.module'
 import { TermsModule } from './terms/terms.module'
 import { TextbooksModule } from './textbooks/textbooks.module'
 import { StorageModule } from './storage/storage.module'
@@ -56,6 +57,7 @@ import { UploadsModule } from './uploads/uploads.module'
     MeetingsModule,
     StaffModule,
     StudiesModule,
+    GraduatesModule,
     TermsModule,
     TextbooksModule,
     TrashModule,

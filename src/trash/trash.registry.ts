@@ -12,6 +12,7 @@ import { Meeting } from '../meetings/entities/meeting.entity'
 import { NewsPost } from '../news/entities/news-post.entity'
 import { StaffMember } from '../staff/entities/staff-member.entity'
 import { StudyAbroad } from '../studies/entities/study-abroad.entity'
+import { Graduate } from '../graduates/entities/graduate.entity'
 import { AcademicTerm } from '../terms/entities/term.entity'
 import { Textbook } from '../textbooks/entities/textbook.entity'
 
@@ -51,6 +52,12 @@ export const TRASH_KINDS: TrashKind[] = [
     label: (row) => row.name || row.nameKy,
     detail: (row) => String(row.year),
     cleanup: (row) => removeAll([row.photo]),
+  }),
+  kind<Graduate>({
+    type: 'graduates',
+    entity: Graduate,
+    label: (row) => row.name || row.nameKy,
+    detail: (row) => `${row.year}-${row.term}`,
   }),
   kind<StaffMember>({
     type: 'staff',
