@@ -5,6 +5,7 @@ import { In, IsNull, Repository } from 'typeorm'
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateStaffDto, UpdateStaffDto } from './dto/staff.dto'
 import { StaffMember } from './entities/staff-member.entity'
+import { cleanTranslations } from '../common/translations'
 
 @Injectable()
 export class StaffService implements OnApplicationBootstrap {
@@ -48,6 +49,7 @@ export class StaffService implements OnApplicationBootstrap {
       isPublished: dto.isPublished ?? true,
       startDate: dto.startDate || null,
       endDate: dto.endDate || null,
+      translations: cleanTranslations(dto.translations),
     })
 
     this.assertPeriod(member.startDate, member.endDate)
@@ -60,6 +62,7 @@ export class StaffService implements OnApplicationBootstrap {
     const previousPhoto = member.photoUrl
 
     Object.assign(member, dto, dto.email !== undefined ? { email: dto.email || null } : {})
+    if (dto.translations !== undefined) member.translations = cleanTranslations(dto.translations)
     this.assertPeriod(member.startDate, member.endDate)
     const saved = await this.staffRepository.save(member)
 

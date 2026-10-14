@@ -16,6 +16,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -36,6 +37,10 @@ export class CompetitionWinnerDto {
   @IsString()
   @MaxLength(255)
   note?: string | null
+
+  @IsOptional()
+  @IsTranslations({ name: 150, note: 255 })
+  translations?: Translations
 }
 
 export class CreateCompetitionDto {
@@ -111,6 +116,10 @@ export class CreateCompetitionDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean
+
+  @IsOptional()
+  @IsTranslations({ title: 255, venue: 255, summary: 20000 })
+  translations?: Translations
 }
 
 export class UpdateCompetitionDto extends PartialType(CreateCompetitionDto) {}

@@ -1,5 +1,20 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsEmail, IsInt, IsOptional, IsString, IsUUID, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsBoolean,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateIf,
+} from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
@@ -52,6 +67,10 @@ export class CreateStaffDto {
   @ValidateIf((_, value) => value !== null)
   @Matches(ISO_DATE, { message: 'validation.staff.dateInvalid' })
   endDate?: string | null
+
+  @IsOptional()
+  @IsTranslations({ name: 120, position: 160, bio: 4000 })
+  translations?: Translations
 }
 
 export class UpdateStaffDto extends PartialType(CreateStaffDto) {}

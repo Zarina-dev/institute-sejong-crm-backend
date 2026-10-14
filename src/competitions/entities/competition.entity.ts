@@ -1,5 +1,7 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+import type { Translations } from '../../common/translations'
+
 /**
  * The kinds of event the institute has always had: its two competitions and
  * the occasions it used to keep photo albums for (개강식, 역사 탐방 …). They
@@ -20,6 +22,11 @@ export const BUILTIN_COMPETITION_KINDS = [
   'camp',
   'ska',
   'topik',
+  'culture',
+  'kpop',
+  'quiz',
+  'olympiad',
+  'awards',
   'other',
 ] as const
 export type CompetitionKind = string
@@ -29,6 +36,8 @@ export type CompetitionWinner = {
   rank: number
   name: string
   note?: string | null
+  /** The winner's name (in Cyrillic or Latin) and note in the other languages. */
+  translations?: Translations<'name' | 'note'>
 }
 
 /**
@@ -90,6 +99,10 @@ export class Competition {
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
+
+  /** Title, venue and summary (HTML) in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   /**
    * The photo album this record was carried over from, when it was — so the

@@ -1,5 +1,7 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+import type { Translations } from '../../common/translations'
+
 /** A teacher or administrator shown on the About page. */
 @Entity('staff_members')
 @Index('idx_staff_order', ['isPublished', 'sortOrder'])
@@ -50,6 +52,10 @@ export class StaffMember {
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
+
+  /** Name, position and bio in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

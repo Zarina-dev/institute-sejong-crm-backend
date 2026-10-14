@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import type { Translations } from '../../common/translations'
 
 export type NewsCategory = 'academic' | 'events' | 'campus' | 'admissions' | 'press'
 
@@ -24,6 +25,10 @@ export class NewsPost {
 
   @Column({ type: 'boolean', default: false })
   isPublished!: boolean
+
+  /** Title and body (HTML) in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   /** Set when first published; the public list is ordered by it. */
   @Column({ type: 'timestamptz', nullable: true })

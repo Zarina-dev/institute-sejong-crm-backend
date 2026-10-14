@@ -5,6 +5,10 @@ import { Repository } from 'typeorm'
 import { sanitizeRichText } from '../common/sanitize'
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto'
 import { NewsPost } from './entities/news-post.entity'
+import { cleanTranslations, type Translations } from '../common/translations'
+
+/** A translated body is HTML like the Korean one, and is sanitized the same way. */
+const postTranslations = (translations?: Translations) => cleanTranslations(translations, { fields: ['body'], fn: sanitizeRichText })
 
 @Injectable()
 export class NewsService {
@@ -63,6 +67,7 @@ export class NewsService {
       isPublished: dto.isPublished ?? false,
       isFeatured: dto.isFeatured ?? false,
       publishedAt: dto.isPublished ? new Date() : null,
+      translations: postTranslations(dto.translations),
     })
 
     return this.newsRepository.save(post)
@@ -73,6 +78,7 @@ export class NewsService {
     const becomesPublished = dto.isPublished === true && !post.isPublished
 
     Object.assign(post, dto, dto.body !== undefined ? { body: sanitizeRichText(dto.body) } : {})
+    if (dto.translations !== undefined) post.translations = postTranslations(dto.translations)
 
     // The publish date is the first time the post went live, not every edit.
     if (becomesPublished && !post.publishedAt) {

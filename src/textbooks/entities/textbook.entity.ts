@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import type { Translations } from '../../common/translations'
 
 /**
  * 교재 안내 — one row per textbook, so every entry on the public page carries
@@ -36,6 +37,10 @@ export class Textbook {
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
+
+  /** Title, description and where to buy it in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

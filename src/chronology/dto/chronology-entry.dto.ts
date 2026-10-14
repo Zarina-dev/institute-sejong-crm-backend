@@ -1,5 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { IsBoolean, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 export class CreateChronologyEntryDto {
   @IsInt()
@@ -38,6 +39,10 @@ export class CreateChronologyEntryDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean
+
+  @IsOptional()
+  @IsTranslations({ title: 255, description: 2000 })
+  translations?: Translations
 }
 
 export class UpdateChronologyEntryDto extends PartialType(CreateChronologyEntryDto) {}

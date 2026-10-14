@@ -1,5 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types'
 import { IsBoolean, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 export const NEWS_CATEGORIES = ['academic', 'events', 'campus', 'admissions', 'press'] as const
 
@@ -32,6 +33,10 @@ export class CreateNewsDto {
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean
+
+  @IsOptional()
+  @IsTranslations({ title: 255, body: 200000 })
+  translations?: Translations
 }
 
 export class UpdateNewsDto extends PartialType(CreateNewsDto) {}

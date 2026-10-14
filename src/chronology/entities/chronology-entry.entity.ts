@@ -1,5 +1,7 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
+import type { Translations } from '../../common/translations'
+
 /**
  * 연혁 — one line of the institute's history. Institutions write these as
  * "2013. 09. 오시 1 세종학당 개원": the year always, the month usually, the
@@ -35,6 +37,10 @@ export class ChronologyEntry {
 
   @Column({ type: 'boolean', default: true })
   isPublished!: boolean
+
+  /** Title and description in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import type { Translations } from '../../common/translations'
 
 /** ISO weekday: 1 = Monday … 7 = Sunday. Times are HH:mm. */
 export type CourseSession = {
@@ -120,6 +121,10 @@ export class Course {
   @Index()
   @Column({ type: 'boolean', default: false })
   isPublished!: boolean
+
+  /** Title, subject, description, level and teacher in English, Russian and Kyrgyz. Falls back to the Korean on the site. */
+  @Column({ type: 'jsonb', default: {} })
+  translations!: Translations
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date

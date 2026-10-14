@@ -7,9 +7,20 @@ import { removeUploadedFile } from '../common/uploaded-files'
 import { GalleryAlbum } from '../gallery/entities/gallery-album.entity'
 import { CreateCompetitionDto, UpdateCompetitionDto } from './dto/competition.dto'
 import { Competition, type CompetitionKind, type CompetitionWinner } from './entities/competition.entity'
+import { cleanTranslations, type Translations } from '../common/translations'
 
 /** Results read as a ranking, so they are stored in that order. */
-const byRank = (winners: CompetitionWinner[] = []) => [...winners].sort((a, b) => a.rank - b.rank)
+/** In rank order; each winner's translations kept only where they say something. */
+const byRank = (winners: CompetitionWinner[] = []) =>
+  [...winners]
+    .sort((a, b) => a.rank - b.rank)
+    .map(({ translations, ...winner }) => {
+      const clean = cleanTranslations(translations)
+      return Object.keys(clean).length > 0 ? { ...winner, translations: clean } : winner
+    })
+
+/** A record's translated summary is HTML like the Korean one, and is sanitized the same way. */
+const recordTranslations = (translations?: Translations) => cleanTranslations(translations, { fields: ['summary'], fn: sanitizeRichText })
 
 /** Album tags that name a competition the records already know by its code. */
 const KIND_FOR_TAG: Record<string, CompetitionKind> = { speechContest: 'speech', writingContest: 'writing' }
@@ -132,6 +143,7 @@ export class CompetitionsService implements OnApplicationBootstrap {
       images: dto.images ?? [],
       albumUrl: dto.albumUrl || null,
       isPublished: dto.isPublished ?? true,
+      translations: recordTranslations(dto.translations),
     })
 
     return this.competitionRepository.save(competition)
@@ -147,6 +159,7 @@ export class CompetitionsService implements OnApplicationBootstrap {
       ...(dto.winners !== undefined ? { winners: byRank(dto.winners) } : {}),
       ...(dto.heldOn !== undefined ? { heldOn: dto.heldOn || null } : {}),
       ...(dto.albumUrl !== undefined ? { albumUrl: dto.albumUrl || null } : {}),
+      ...(dto.translations !== undefined ? { translations: recordTranslations(dto.translations) } : {}),
     })
 
     const saved = await this.competitionRepository.save(competition)

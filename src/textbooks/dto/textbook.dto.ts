@@ -1,5 +1,20 @@
 import { PartialType } from '@nestjs/mapped-types'
-import { ArrayMaxSize, ArrayMinSize, IsBoolean, IsInt, IsOptional, IsString, IsUUID, IsUrl, Matches, MaxLength, Min, MinLength, ValidateIf } from 'class-validator'
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsUrl,
+  Matches,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateIf,
+} from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 export class CreateTextbookDto {
   @IsString()
@@ -37,6 +52,10 @@ export class CreateTextbookDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean
+
+  @IsOptional()
+  @IsTranslations({ title: 255, description: 4000, purchasePlace: 255 })
+  translations?: Translations
 }
 
 export class UpdateTextbookDto extends PartialType(CreateTextbookDto) {}

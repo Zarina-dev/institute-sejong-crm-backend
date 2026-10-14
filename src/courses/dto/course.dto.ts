@@ -18,6 +18,7 @@ import {
   ValidateIf,
   ValidateNested,
 } from 'class-validator'
+import { IsTranslations, type Translations } from '../../common/translations'
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -159,6 +160,10 @@ export class CreateCourseDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean
+
+  @IsOptional()
+  @IsTranslations({ title: 255, subject: 120, description: 4000, level: 120, teacherName: 150 })
+  translations?: Translations
 }
 
 export class UpdateCourseDto extends PartialType(CreateCourseDto) {}

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { Course } from './entities/course.entity'
+import type { Translations } from '../common/translations'
 
 export type TimetableQuery = {
   /** Inclusive ISO dates; default = the current Monday..Sunday. */
@@ -25,6 +26,8 @@ export type TimetableEntry = {
   teacher: string | null
   classroom: string | null
   courseGroup: string
+  /** The course's title, subject and teacher in the other languages. */
+  translations: Translations
 }
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10)
@@ -65,7 +68,17 @@ export class TimetableService {
      */
     const select = this.courseRepository
       .createQueryBuilder('course')
-      .select(['course.id', 'course.title', 'course.subject', 'course.teacherName', 'course.classroom', 'course.sessions', 'course.startDate', 'course.endDate'])
+      .select([
+        'course.id',
+        'course.title',
+        'course.subject',
+        'course.teacherName',
+        'course.classroom',
+        'course.sessions',
+        'course.startDate',
+        'course.endDate',
+        'course.translations',
+      ])
       .where('course.isPublished = true')
       .andWhere('(course.startDate IS NULL OR course.startDate <= :to)', { to })
       .andWhere('(course.endDate IS NULL OR course.endDate >= :from)', { from })
@@ -103,6 +116,7 @@ export class TimetableService {
             teacher: course.teacherName,
             classroom: session.classroom ?? course.classroom,
             courseGroup: course.title,
+            translations: course.translations ?? {},
           })
         }
       }

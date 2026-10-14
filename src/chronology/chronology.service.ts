@@ -4,6 +4,7 @@ import { Repository } from 'typeorm'
 
 import { CreateChronologyEntryDto, UpdateChronologyEntryDto } from './dto/chronology-entry.dto'
 import { ChronologyEntry } from './entities/chronology-entry.entity'
+import { cleanTranslations } from '../common/translations'
 
 @Injectable()
 export class ChronologyService {
@@ -44,6 +45,7 @@ export class ChronologyService {
       description: dto.description ?? '',
       isMilestone: dto.isMilestone ?? false,
       isPublished: dto.isPublished ?? true,
+      translations: cleanTranslations(dto.translations),
     })
 
     return this.entryRepository.save(entry)
@@ -52,6 +54,7 @@ export class ChronologyService {
   async update(id: string, dto: UpdateChronologyEntryDto) {
     const entry = await this.getById(id)
     Object.assign(entry, dto)
+    if (dto.translations !== undefined) entry.translations = cleanTranslations(dto.translations)
 
     return this.entryRepository.save(entry)
   }

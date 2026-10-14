@@ -7,6 +7,7 @@ import { TermsService } from '../terms/terms.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import { weeklyHoursFromSessions } from './session-hours'
 import { Course } from './entities/course.entity'
+import { cleanTranslations } from '../common/translations'
 
 /**
  * Last-resort 학기 guess, used only while the institute has not defined any
@@ -84,11 +85,7 @@ export class CoursesService {
     return { startDate, endDate }
   }
 
-  listCourses({
-    publishedOnly = false,
-    term,
-    category,
-  }: { publishedOnly?: boolean; term?: string; category?: 'language' | 'culture' } = {}) {
+  listCourses({ publishedOnly = false, term, category }: { publishedOnly?: boolean; term?: string; category?: 'language' | 'culture' } = {}) {
     const query = this.courseRepository.createQueryBuilder('course')
 
     if (publishedOnly) {
@@ -159,6 +156,7 @@ export class CoursesService {
       isPublished: dto.isPublished ?? false,
       // 주 시간 defaults to what the weekly pattern adds up to.
       weeklyHours: dto.weeklyHours ?? weeklyHoursFromSessions(dto.sessions),
+      translations: cleanTranslations(dto.translations),
     })
 
     return this.courseRepository.save(course)
@@ -170,6 +168,7 @@ export class CoursesService {
     this.assertPeriod(dto.startDate ?? course.startDate, dto.endDate ?? course.endDate)
     // Only DTO-whitelisted keys reach here.
     Object.assign(course, dto)
+    if (dto.translations !== undefined) course.translations = cleanTranslations(dto.translations)
 
     // The semester or the kind of period changed: work the dates out again.
     // A request carrying dates alone keeps the older behaviour below, where
@@ -179,8 +178,8 @@ export class CoursesService {
         course,
         await this.resolvePeriod(dto.term ?? course.term, {
           followsTerm: course.followsTerm ?? false,
-          startDate: dto.startDate ?? (course.followsTerm ? undefined : course.startDate ?? undefined),
-          endDate: dto.endDate ?? (course.followsTerm ? undefined : course.endDate ?? undefined),
+          startDate: dto.startDate ?? (course.followsTerm ? undefined : (course.startDate ?? undefined)),
+          endDate: dto.endDate ?? (course.followsTerm ? undefined : (course.endDate ?? undefined)),
         }),
       )
     }

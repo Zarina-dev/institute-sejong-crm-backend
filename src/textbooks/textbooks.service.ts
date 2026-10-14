@@ -5,6 +5,7 @@ import { In, Repository } from 'typeorm'
 import { removeUploadedFile } from '../common/uploaded-files'
 import { CreateTextbookDto, UpdateTextbookDto } from './dto/textbook.dto'
 import { Textbook } from './entities/textbook.entity'
+import { cleanTranslations } from '../common/translations'
 
 @Injectable()
 export class TextbooksService {
@@ -42,6 +43,7 @@ export class TextbooksService {
       purchaseUrl: dto.purchaseUrl || null,
       sortOrder: dto.sortOrder ?? 0,
       isPublished: dto.isPublished ?? true,
+      translations: cleanTranslations(dto.translations),
     })
 
     return this.textbookRepository.save(textbook)
@@ -52,6 +54,7 @@ export class TextbooksService {
     const previousCover = textbook.coverImage
 
     Object.assign(textbook, dto, dto.purchaseUrl !== undefined ? { purchaseUrl: dto.purchaseUrl || null } : {})
+    if (dto.translations !== undefined) textbook.translations = cleanTranslations(dto.translations)
     const saved = await this.textbookRepository.save(textbook)
 
     // A replaced or cleared cover should not linger on disk.
