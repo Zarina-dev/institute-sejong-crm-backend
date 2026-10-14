@@ -2,7 +2,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGener
 
 /**
  * 연혁 — one line of the institute's history. Institutions write these as
- * "2011. 03. 오시 1 세종학당 개원": the year always, the month usually, the
+ * "2013. 09. 오시 1 세종학당 개원": the year always, the month usually, the
  * day rarely. So the date is kept as three columns rather than one date
  * string — a missing month is a fact about the record, not a null to guess at.
  */
