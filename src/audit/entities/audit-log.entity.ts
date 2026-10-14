@@ -1,5 +1,7 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
 
+import type { AuditChange } from '../diff'
+
 /** What happened. `login_failed` is a sign-in refused — worth seeing when it repeats. */
 export const AUDIT_ACTIONS = ['create', 'update', 'publish', 'unpublish', 'reorder', 'delete', 'restore', 'purge', 'login', 'login_failed'] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
@@ -7,8 +9,9 @@ export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 /**
  * 작업 기록 — one change made through the admin panel (or by the system, as
  * the 30-day purge). A record of who did what, for people; technical logs
- * stay in the server's output. Field *names* are kept, never their values:
- * the journal must not become a second copy of every text and photo.
+ * stay in the server's output. An edit keeps each changed field's value
+ * before and after, shortened (80 characters, HTML as plain text) — enough
+ * to see what changed, never a second copy of every text and photo.
  */
 @Entity('audit_log')
 @Index('idx_audit_at', ['at'])
@@ -39,9 +42,9 @@ export class AuditLogEntry {
   @Column({ type: 'varchar', length: 300, default: '' })
   label!: string
 
-  /** Fields an update sent (names only). */
+  /** What an edit changed: field, before → after (see diff.ts). Entries written before 2026-10-14 hold field names only. */
   @Column({ type: 'jsonb', default: [] })
-  changes!: string[]
+  changes!: Array<AuditChange | string>
 
   /** The client's address, as the proxy in front reports it (TRUST_PROXY). */
   @Column({ type: 'varchar', length: 64, nullable: true })

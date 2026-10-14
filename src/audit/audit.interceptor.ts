@@ -4,6 +4,7 @@ import { catchError, tap, throwError, type Observable } from 'rxjs'
 
 import type { AuthUser } from '../auth/auth.service'
 import { AuditService } from './audit.service'
+import { diffFields } from './diff'
 import { clientIp, deviceOf } from './client-info'
 import type { AuditAction } from './entities/audit-log.entity'
 
@@ -43,7 +44,7 @@ function describe(request: Request): Described | null {
   }
 
   if (second === 'order') return { action: 'reorder', type: resource, id: null, changes: [], labelFirst: false }
-  if (third === 'publish' || third === 'unpublish') return { action: third, type: resource, id: second, changes: [], labelFirst: false }
+  if (third === 'publish' || third === 'unpublish') return { action: third, type: resource, id: second, changes: ['isPublished'], labelFirst: false }
 
   switch (method) {
     case 'POST':
@@ -53,7 +54,7 @@ function describe(request: Request): Described | null {
       // Only the publish switch moved: say so plainly.
       const publishOnly = fields.length === 1 && fields[0] === 'isPublished'
       const action: AuditAction = publishOnly ? (body.isPublished ? 'publish' : 'unpublish') : 'update'
-      return { action, type: resource, id: second ?? null, changes: publishOnly ? [] : fields, labelFirst: false }
+      return { action, type: resource, id: second ?? null, changes: fields, labelFirst: false }
     }
     case 'DELETE':
       return { action: 'delete', type: resource, id: second ?? null, changes: [], labelFirst: true }
@@ -95,20 +96,26 @@ export class AuditInterceptor implements NestInterceptor {
     const actor = request.user?.username ?? 'anonymous'
     // A delete, restore or purge returns no record: read its name first.
     const labelBefore = described.labelFirst && described.type && described.id ? await this.audit.labelOf(described.type, described.id) : ''
+    // An edit: the record before, to set against it afterwards.
+    const edits = described.changes.length > 0 && described.type && described.id
+    const before = edits ? await this.audit.snapshot(described.type!, described.id!) : null
 
     return next.handle().pipe(
       tap((response: unknown) => {
         const responseId = response && typeof response === 'object' ? (response as { id?: unknown }).id : undefined
-        void this.audit.record({
-          actor,
-          action: described.action,
-          entityType: described.type,
-          entityId: described.id ?? (typeof responseId === 'string' ? responseId : null),
-          label: labelBefore || this.audit.labelFrom(described.type, response) || described.id || '',
-          changes: described.changes,
-          ip,
-          device,
-        })
+        void (async () => {
+          const after = edits ? await this.audit.snapshot(described.type!, described.id!) : null
+          await this.audit.record({
+            actor,
+            action: described.action,
+            entityType: described.type,
+            entityId: described.id ?? (typeof responseId === 'string' ? responseId : null),
+            label: labelBefore || this.audit.labelFrom(described.type, response) || described.id || '',
+            changes: edits ? diffFields(before, after, described.changes) : [],
+            ip,
+            device,
+          })
+        })()
       }),
     )
   }

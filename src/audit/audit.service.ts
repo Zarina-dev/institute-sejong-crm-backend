@@ -2,12 +2,13 @@ import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } fro
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
 import { DataSource, LessThan, Repository } from 'typeorm'
 
+import { SiteContent } from '../content/entities/site-content.entity'
 import { TRASH_KINDS } from '../trash/trash.registry'
 import { locate } from './client-info'
 import { AUDIT_ACTIONS, AuditLogEntry, type AuditAction } from './entities/audit-log.entity'
 
-/** How long the journal keeps an entry. */
-const KEEP_DAYS = 365
+/** How long the journal keeps an entry: two months. */
+const KEEP_DAYS = 60
 const DAY = 24 * 60 * 60 * 1000
 
 export type AuditQuery = { page?: number; limit?: number; action?: string; type?: string; q?: string }
@@ -100,6 +101,28 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
     }
   }
 
+  /**
+   * The record as it is now — before an edit, and again after — so the entry
+   * can say what changed. Content blocks are keyed "slug/locale".
+   */
+  async snapshot(type: string, id: string): Promise<Record<string, unknown> | null> {
+    try {
+      if (type === 'content') {
+        const [slug, locale] = id.split('/')
+        return ((await this.dataSource.getRepository(SiteContent).findOne({ where: { slug: slug as SiteContent['slug'], locale } })) ??
+          null) as Record<string, unknown> | null
+      }
+      const kind = TRASH_KINDS.find((candidate) => candidate.type === type)
+      if (!kind) return null
+      return ((await this.dataSource.getRepository(kind.entity).findOne({ withDeleted: true, where: { id } })) ?? null) as Record<
+        string,
+        unknown
+      > | null
+    } catch {
+      return null
+    }
+  }
+
   /** A record's name from the record itself, as a create or an update returns it. */
   labelFrom(type: string | null, body: unknown) {
     if (!body || typeof body !== 'object') return ''
@@ -109,7 +132,7 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
     return typeof label === 'string' ? label : String(label ?? '')
   }
 
-  /** Entries older than a year go. */
+  /** Entries older than two months go. */
   async purgeOld() {
     try {
       const { affected } = await this.entries.delete({ at: LessThan(new Date(Date.now() - KEEP_DAYS * DAY)) })
