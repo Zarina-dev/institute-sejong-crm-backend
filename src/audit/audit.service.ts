@@ -3,6 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm'
 import { DataSource, LessThan, Repository } from 'typeorm'
 
 import { TRASH_KINDS } from '../trash/trash.registry'
+import { locate } from './client-info'
 import { AUDIT_ACTIONS, AuditLogEntry, type AuditAction } from './entities/audit-log.entity'
 
 /** How long the journal keeps an entry. */
@@ -11,7 +12,7 @@ const DAY = 24 * 60 * 60 * 1000
 
 export type AuditQuery = { page?: number; limit?: number; action?: string; type?: string; q?: string }
 
-export type AuditEntry = Pick<AuditLogEntry, 'actor' | 'action' | 'entityType' | 'entityId' | 'label' | 'changes' | 'ip'>
+export type AuditEntry = Pick<AuditLogEntry, 'actor' | 'action' | 'entityType' | 'entityId' | 'label' | 'changes' | 'ip' | 'device'>
 
 @Injectable()
 export class AuditService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -39,6 +40,8 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
    */
   async record(entry: Partial<AuditEntry> & { actor: string; action: AuditAction }) {
     try {
+      const ip = entry.ip?.slice(0, 64) ?? null
+      const { country, city } = await locate(ip)
       await this.entries.insert({
         actor: entry.actor.slice(0, 120),
         action: entry.action,
@@ -46,7 +49,10 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
         entityId: entry.entityId?.slice(0, 80) ?? null,
         label: (entry.label ?? '').slice(0, 300),
         changes: entry.changes ?? [],
-        ip: entry.ip?.slice(0, 64) ?? null,
+        ip,
+        country,
+        city: city?.slice(0, 80) ?? null,
+        device: entry.device?.slice(0, 120) ?? null,
       })
     } catch (error) {
       this.logger.warn(`Could not write an audit entry (${entry.action} ${entry.entityType ?? ''}): ${(error as Error).message}`)

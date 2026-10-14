@@ -4,6 +4,7 @@ import { catchError, tap, throwError, type Observable } from 'rxjs'
 
 import type { AuthUser } from '../auth/auth.service'
 import { AuditService } from './audit.service'
+import { clientIp, deviceOf } from './client-info'
 import type { AuditAction } from './entities/audit-log.entity'
 
 /** Routes that change nothing a person would look for in the journal. */
@@ -77,14 +78,15 @@ export class AuditInterceptor implements NestInterceptor {
 
     if (!described) return next.handle()
 
-    const ip = request.ip ?? null
+    const ip = clientIp(request)
+    const device = deviceOf(request.headers['user-agent'])
 
     if (described.action === 'login') {
       const username = String((request.body as { username?: unknown })?.username ?? '').trim() || '?'
       return next.handle().pipe(
-        tap(() => void this.audit.record({ actor: username, action: 'login', ip })),
+        tap(() => void this.audit.record({ actor: username, action: 'login', ip, device })),
         catchError((error: unknown) => {
-          void this.audit.record({ actor: username, action: 'login_failed', ip })
+          void this.audit.record({ actor: username, action: 'login_failed', ip, device })
           return throwError(() => error)
         }),
       )
@@ -105,6 +107,7 @@ export class AuditInterceptor implements NestInterceptor {
           label: labelBefore || this.audit.labelFrom(described.type, response) || described.id || '',
           changes: described.changes,
           ip,
+          device,
         })
       }),
     )

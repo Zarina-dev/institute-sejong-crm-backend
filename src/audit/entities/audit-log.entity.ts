@@ -43,6 +43,18 @@ export class AuditLogEntry {
   @Column({ type: 'jsonb', default: [] })
   changes!: string[]
 
+  /** The client's address, as the proxy in front reports it (TRUST_PROXY). */
   @Column({ type: 'varchar', length: 64, nullable: true })
   ip!: string | null
+
+  /** ISO country code looked up from the IP when it was recorded; null for a local or unknown address. */
+  @Column({ type: 'varchar', length: 2, nullable: true })
+  country!: string | null
+
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  city!: string | null
+
+  /** Browser and system, read from the User-Agent: "Edge 141 · Windows". */
+  @Column({ type: 'varchar', length: 120, nullable: true })
+  device!: string | null
 }

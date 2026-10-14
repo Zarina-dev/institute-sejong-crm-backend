@@ -12,6 +12,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api')
 
+  // Behind a proxy (Cloudflare, a load balancer, nginx) the client's address
+  // arrives in X-Forwarded-For. Express believes that header only from the
+  // proxies named here, so nobody can forge their address from outside:
+  // TRUST_PROXY is a hop count ("1", "2") or a list of addresses/subnets.
+  // By default only proxies on this machine or the local network are trusted.
+  const trustProxy = process.env.TRUST_PROXY?.trim()
+  app.set('trust proxy', trustProxy ? (/^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy) : 'loopback, linklocal, uniquelocal')
+
   app.enableCors({
     origin: true,
     credentials: true,
