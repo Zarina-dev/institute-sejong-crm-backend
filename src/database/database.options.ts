@@ -16,6 +16,12 @@ import type { DataSourceOptions } from 'typeorm'
 export function databaseOptions(): DataSourceOptions {
   return {
     type: 'postgres',
+    // A host such as Railway hands out one connection string; when it is
+    // set it wins over the DB_* parts. DB_SSL=true for a server that only
+    // takes encrypted connections from outside (not needed on Railway's
+    // private network).
+    url: process.env.DATABASE_URL || undefined,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
     host: process.env.DB_HOST || 'localhost',
     port: Number(process.env.DB_PORT || 5432),
     username: process.env.DB_USERNAME || 'postgres',
