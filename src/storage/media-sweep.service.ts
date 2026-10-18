@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm'
 import { DataSource } from 'typeorm'
 
 import { r2Storage, STORED_KINDS, type StoredKind } from './r2-storage.service'
+import { thumbnailOwner } from './thumbnails'
 
 /** An upload younger than this may belong to a form not saved yet. */
 const GRACE = 24 * 60 * 60 * 1000
@@ -92,6 +93,19 @@ export class MediaSweepService implements OnApplicationBootstrap, OnApplicationS
         result.removed.push({ kind, file: entry.file, bucket: storage.bucketFor(kind) })
         if (!dryRun) await storage.remove(kind, entry.file)
       }
+    }
+
+    // No record names a thumbnail: it lives exactly as long as its photo.
+    const photos = new Set([...referenced].map((file) => file.replace(/\.[^.]+$/, '')))
+    for (const entry of await storage.list('thumbs')) {
+      const owner = thumbnailOwner(entry.file)
+      if ((owner && photos.has(owner)) || entry.modified.getTime() > cutoff) {
+        result.kept += 1
+        continue
+      }
+
+      result.removed.push({ kind: 'thumbs', file: entry.file, bucket: storage.bucketFor('thumbs') })
+      if (!dryRun) await storage.remove('thumbs', entry.file)
     }
 
     if (result.removed.length > 0 && !dryRun) {

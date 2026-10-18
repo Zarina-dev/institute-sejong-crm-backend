@@ -55,7 +55,8 @@ const extensionOf = (name: string) =>
  * alone is trivial to spoof.
  */
 const imageUploadOptions: MulterOptions = {
-  storage: new R2MulterStorage('images'),
+  // With its thumbnail: the smaller copy lists and cards show.
+  storage: new R2MulterStorage('images', undefined, true),
   limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
   fileFilter: (_req, file, cb) => {
     if (!(IMAGE_EXTENSIONS as readonly string[]).includes(extensionOf(file.originalname)) || !IMAGE_MIME.test(file.mimetype)) {

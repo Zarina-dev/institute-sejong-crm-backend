@@ -21,9 +21,10 @@ import type { Readable } from 'stream'
  *   which is why the two kinds of files cannot share a bucket.
  */
 export const STORED_KINDS = ['images', 'videos', 'documents', 'materials'] as const
-export type StoredKind = (typeof STORED_KINDS)[number]
-type MediaKind = 'images' | 'videos'
-const MEDIA_KINDS: readonly MediaKind[] = ['images', 'videos']
+/** What records store, plus `thumbs`: the smaller copies of photos, which no record names (storage/thumbnails.ts). */
+export type StoredKind = (typeof STORED_KINDS)[number] | 'thumbs'
+type MediaKind = 'images' | 'videos' | 'thumbs'
+const MEDIA_KINDS: readonly MediaKind[] = ['images', 'videos', 'thumbs']
 const PUBLIC_KINDS: readonly StoredKind[] = MEDIA_KINDS
 
 /** `/uploads/<kind>/<file>` — what records store for images, videos and documents. */
@@ -32,8 +33,10 @@ export function parseStoredUrl(url: string | null | undefined): { kind: StoredKi
   return match ? { kind: match[1] as StoredKind, file: match[2] } : null
 }
 
-/** Only the public kinds — the ones a URL may be redirected to. */
+/** Only the public kinds — the ones a URL may be redirected to (a thumbnail's too). */
 export function parseMediaUrl(url: string | null | undefined): { kind: MediaKind; file: string } | null {
+  const thumb = url ? /^\/uploads\/thumbs\/([\w.-]+)$/.exec(url) : null
+  if (thumb) return { kind: 'thumbs', file: thumb[1] }
   const parsed = parseStoredUrl(url)
   return parsed && PUBLIC_KINDS.includes(parsed.kind) ? (parsed as { kind: MediaKind; file: string }) : null
 }

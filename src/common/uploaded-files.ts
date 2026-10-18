@@ -1,4 +1,5 @@
 import { parseStoredUrl, r2Storage } from '../storage/r2-storage.service'
+import { thumbnailOf } from '../storage/thumbnails'
 
 /**
  * Removes a file previously returned by `/uploads/*`, given the
@@ -9,6 +10,8 @@ import { parseStoredUrl, r2Storage } from '../storage/r2-storage.service'
 export async function removeUploadedFile(url: string | null | undefined) {
   const stored = parseStoredUrl(url)
   if (stored) {
-    await r2Storage().remove(stored.kind, stored.file)
+    // A photo goes together with its thumbnail.
+    const thumb = stored.kind === 'images' ? thumbnailOf(stored.file) : null
+    await Promise.all([r2Storage().remove(stored.kind, stored.file), thumb ? r2Storage().remove('thumbs', thumb) : null])
   }
 }

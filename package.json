@@ -11,6 +11,7 @@
     "db": "node scripts/local-db.mjs",
     "media:sweep": "node dist/storage/sweep-media.js",
     "uploads:migrate": "node dist/scripts/migrate-uploads-to-r2.js",
+    "images:thumbs": "node dist/scripts/make-thumbnails.js",
     "migration:generate": "typeorm -d dist/database/data-source.js migration:generate",
     "migration:run": "typeorm -d dist/database/data-source.js migration:run",
     "migration:revert": "typeorm -d dist/database/data-source.js migration:revert",
@@ -36,6 +37,7 @@
     "reflect-metadata": "^0.1.0",
     "rxjs": "^7.6.0",
     "sanitize-html": "^2.17.7",
+    "sharp": "^0.34.5",
     "typeorm": "^0.3.5"
   },
   "devDependencies": {
