@@ -2,6 +2,12 @@ import { join } from 'path'
 import type { DataSourceOptions } from 'typeorm'
 
 /**
+ * One connection string, as Railway hands it out (`${{Postgres.DATABASE_URL}}`).
+ * Unset, it is the local database `npm run db` starts.
+ */
+export const databaseUrl = () => process.env.DATABASE_URL?.trim() || 'postgres://postgres:postgres@localhost:5432/institut'
+
+/**
  * How the API and the TypeORM CLI reach PostgreSQL — one definition for
  * both, so a migration is generated and run against the schema the app
  * actually uses.
@@ -16,17 +22,7 @@ import type { DataSourceOptions } from 'typeorm'
 export function databaseOptions(): DataSourceOptions {
   return {
     type: 'postgres',
-    // A host such as Railway hands out one connection string; when it is
-    // set it wins over the DB_* parts. DB_SSL=true for a server that only
-    // takes encrypted connections from outside (not needed on Railway's
-    // private network).
-    url: process.env.DATABASE_URL || undefined,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT || 5432),
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'institut',
+    url: databaseUrl(),
     synchronize: false,
     migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
     migrationsTableName: 'migrations',

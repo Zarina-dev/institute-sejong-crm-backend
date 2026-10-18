@@ -9,8 +9,8 @@
  *   npm run db          start it (keeps running; Ctrl+C stops it)
  *   npm run db -- stop  stop a server left running from an earlier session
  *
- * Connection details match backend/.env.example, so the API needs no
- * configuration: postgres / postgres on 5432, database `institut`.
+ * Connection details come from DATABASE_URL, and its default is the API's
+ * too: postgres / postgres on 5432, database `institut`.
  */
 import EmbeddedPostgres from 'embedded-postgres'
 import pkg from 'pg'
@@ -21,13 +21,17 @@ import { fileURLToPath } from 'node:url'
 const { Client } = pkg
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
+const url = new URL(process.env.DATABASE_URL?.trim() || 'postgres://postgres:postgres@localhost:5432/institut')
+const user = decodeURIComponent(url.username) || 'postgres'
+const password = decodeURIComponent(url.password) || 'postgres'
+const port = Number(url.port || 5432)
 const databaseDir = join(root, '.pgdata')
 
 const postgres = new EmbeddedPostgres({
   databaseDir,
-  user: process.env.DB_USERNAME ?? 'postgres',
-  password: process.env.DB_PASSWORD ?? 'postgres',
-  port: Number(process.env.DB_PORT ?? 5432),
+  user,
+  password,
+  port,
   persistent: true,
 })
 
@@ -51,12 +55,12 @@ await postgres.start()
  * therefore created from template0 as UTF-8 explicitly, rather than through
  * the helper, which would inherit the cluster's encoding.
  */
-const database = process.env.DB_NAME ?? 'institut'
+const database = decodeURIComponent(url.pathname.slice(1)) || 'institut'
 const client = new Client({
   host: 'localhost',
-  port: Number(process.env.DB_PORT ?? 5432),
-  user: process.env.DB_USERNAME ?? 'postgres',
-  password: process.env.DB_PASSWORD ?? 'postgres',
+  port,
+  user,
+  password,
   database: 'postgres',
 })
 
@@ -73,7 +77,7 @@ if (existing.rowCount === 0) {
 
 await client.end()
 
-console.log(`postgres is listening on ${process.env.DB_PORT ?? 5432} · data in ${databaseDir}`)
+console.log(`postgres is listening on ${port} · data in ${databaseDir}`)
 
 const shutdown = async () => {
   await postgres.stop()

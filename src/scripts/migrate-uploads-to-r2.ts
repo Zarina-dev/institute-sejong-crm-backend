@@ -28,6 +28,7 @@ import { DataSource } from 'typeorm'
 import { materialType } from '../materials/upload.config'
 import { r2Storage, STORED_KINDS, type StoredKind } from '../storage/r2-storage.service'
 import { documentType } from '../uploads/uploads.controller'
+import { databaseUrl } from '../database/database.options'
 
 config({ path: ['.env', '.env.local'], quiet: true })
 
@@ -95,14 +96,7 @@ const sameObject = (remote: { size: number; etag: string }, size: number, md5: s
   remote.size === size && (remote.etag.includes('-') || remote.etag === md5)
 
 const dbClient = () =>
-  new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT || 5432),
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'institut',
-  })
+  new DataSource({ type: 'postgres', url: databaseUrl() })
 
 /** Every stored file some record names, read from every table (trashed rows included). */
 async function referencedFiles(db: DataSource) {

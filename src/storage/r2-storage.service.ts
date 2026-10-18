@@ -49,16 +49,6 @@ type R2Config = {
 
 const REQUIRED = ['R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET', 'R2_PRIVATE_BUCKET', 'R2_PUBLIC_URL'] as const
 
-/** Just the scheme and host: the dashboard shows the S3 address with /<bucket> on the end. */
-function endpointOrigin(value: string | undefined) {
-  if (!value) return ''
-  try {
-    return new URL(value).origin
-  } catch {
-    throw new Error(`R2_ENDPOINT is not a URL: ${value}`)
-  }
-}
-
 /**
  * R2 settings, from the environment only — credentials are never written in
  * code. Every file lives in R2, so a missing value stops the API at start
@@ -67,8 +57,7 @@ function endpointOrigin(value: string | undefined) {
 function readConfig(): R2Config {
   const env = process.env
   const missing: string[] = REQUIRED.filter((name) => !env[name]?.trim())
-  const endpoint =
-    endpointOrigin(env.R2_ENDPOINT?.trim()) || (env.R2_ACCOUNT_ID?.trim() ? `https://${env.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com` : '')
+  const endpoint = env.R2_ACCOUNT_ID?.trim() ? `https://${env.R2_ACCOUNT_ID.trim()}.r2.cloudflarestorage.com` : ''
   if (!endpoint) missing.push('R2_ACCOUNT_ID')
 
   if (missing.length > 0) {
