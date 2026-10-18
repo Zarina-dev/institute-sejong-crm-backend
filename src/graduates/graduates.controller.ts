@@ -4,7 +4,7 @@ import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateGraduateDto, UpdateGraduateDto } from './dto/graduate.dto'
 import { GraduatesService } from './graduates.service'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 @Controller('graduates')
 export class GraduatesController {
@@ -13,7 +13,7 @@ export class GraduatesController {
   /** `?all=true` adds the unpublished ones for the admin page. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
-    return this.graduatesService.list({ publishedOnly: all !== 'true' || !isAdmin(user) })
+    return this.graduatesService.list({ publishedOnly: all !== 'true' || !isStaff(user) })
   }
 
   @Get(':id')
@@ -22,19 +22,19 @@ export class GraduatesController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateGraduateDto) {
     return this.graduatesService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateGraduateDto) {
     return this.graduatesService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.graduatesService.remove(id)
   }

@@ -129,7 +129,7 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
     if (!body || typeof body !== 'object') return ''
     const row = body as Record<string, unknown>
     const kind = TRASH_KINDS.find((candidate) => candidate.type === type)
-    const label = kind ? kind.label(row) : (row.title ?? row.name ?? row.slug ?? '')
+    const label = kind ? kind.label(row) : (row.title ?? row.name ?? row.slug ?? accountName(row) ?? '')
     return typeof label === 'string' ? label : String(label ?? '')
   }
 
@@ -142,4 +142,10 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
       this.logger.warn(`Audit retention failed: ${(error as Error).message}`)
     }
   }
+}
+
+/** An account's username, from the account or from `{ user }` (a password change answers so). Never anything else of it. */
+function accountName(row: Record<string, unknown>): string | undefined {
+  const account = row.user && typeof row.user === 'object' ? (row.user as Record<string, unknown>) : row
+  return typeof account.username === 'string' ? account.username : undefined
 }

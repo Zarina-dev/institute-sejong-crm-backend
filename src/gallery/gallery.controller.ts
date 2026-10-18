@@ -2,7 +2,7 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common'
 
 import { CurrentUser } from '../auth/auth.guard'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 import { GalleryService } from './gallery.service'
 
 /**
@@ -18,7 +18,7 @@ export class GalleryController {
   /** `GET /gallery` — published albums (public). `?all=true` adds the hidden ones, for the admin only. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
-    return all === 'true' && isAdmin(user) ? this.galleryService.listAll() : this.galleryService.listPublished()
+    return all === 'true' && isStaff(user) ? this.galleryService.listAll() : this.galleryService.listPublished()
   }
 
   @Get(':id')

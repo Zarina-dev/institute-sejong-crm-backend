@@ -4,7 +4,7 @@ import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { ChronologyService } from './chronology.service'
 import { CreateChronologyEntryDto, UpdateChronologyEntryDto } from './dto/chronology-entry.dto'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin } from '../auth/visibility'
+import { isStaff } from '../auth/visibility'
 
 @Controller('chronology')
 export class ChronologyController {
@@ -13,23 +13,23 @@ export class ChronologyController {
   /** Published entries (public); `?all=true` adds the hidden ones for the admin. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
-    return this.chronologyService.list({ publishedOnly: all !== 'true' || !isAdmin(user) })
+    return this.chronologyService.list({ publishedOnly: all !== 'true' || !isStaff(user) })
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateChronologyEntryDto) {
     return this.chronologyService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateChronologyEntryDto) {
     return this.chronologyService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.chronologyService.remove(id)
   }

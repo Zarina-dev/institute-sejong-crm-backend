@@ -9,7 +9,7 @@ import { MeetingsService } from './meetings.service'
  * There is deliberately no public list endpoint.
  */
 @Controller('meetings')
-@Authenticated('admin')
+@Authenticated()
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}
 

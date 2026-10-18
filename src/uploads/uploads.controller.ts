@@ -91,7 +91,7 @@ const documentUploadOptions: MulterOptions = {
 export class UploadsController {
   /** Rich-text images, news covers, staff photos — the public bucket. */
   @Post('images')
-  @Authenticated('admin')
+  @Authenticated()
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/images')
@@ -99,7 +99,7 @@ export class UploadsController {
 
   /** 회의록 attachments — .hwp, .pdf and the Office formats; the private bucket. */
   @Post('documents')
-  @Authenticated('admin')
+  @Authenticated()
   @UseInterceptors(FileInterceptor('file', documentUploadOptions))
   uploadDocument(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/documents')
@@ -114,7 +114,7 @@ export class UploadsController {
    * opens inline, for the preview.
    */
   @Get('documents/:file')
-  @Authenticated('admin')
+  @Authenticated()
   async readDocument(@Param('file') file: string, @Query('name') name: string | undefined, @Res() res: Response) {
     const extension = STORED_DOCUMENT.exec(file)?.[1]
 

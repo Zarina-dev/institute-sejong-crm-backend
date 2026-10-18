@@ -4,7 +4,7 @@ import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateTextbookDto, ReorderTextbooksDto, UpdateTextbookDto } from './dto/textbook.dto'
 import { TextbooksService } from './textbooks.service'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 @Controller('textbooks')
 export class TextbooksController {
@@ -13,7 +13,7 @@ export class TextbooksController {
   /** `GET /textbooks` — published ones (public). `?all=true` for the admin page. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
-    return all === 'true' && isAdmin(user) ? this.textbooksService.listAll() : this.textbooksService.listPublished()
+    return all === 'true' && isStaff(user) ? this.textbooksService.listAll() : this.textbooksService.listPublished()
   }
 
   @Get(':id')
@@ -22,26 +22,26 @@ export class TextbooksController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateTextbookDto) {
     return this.textbooksService.create(body)
   }
 
   /** Declared before `:id` so 'order' is not parsed as a UUID. */
   @Patch('order')
-  @Authenticated('admin')
+  @Authenticated()
   reorder(@Body() body: ReorderTextbooksDto) {
     return this.textbooksService.reorder(body.ids)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateTextbookDto) {
     return this.textbooksService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.textbooksService.remove(id)
   }

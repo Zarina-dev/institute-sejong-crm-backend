@@ -7,8 +7,9 @@ import { AuthService, type AuthRole, type AuthUser } from './auth.service'
 const ROLES_KEY = 'auth:roles'
 
 /**
- * Marks a handler (or a whole controller) as requiring a signed-in user.
- * With no roles, any authenticated user passes; with roles, one must match.
+ * Marks a handler (or a whole controller) as requiring a signed-in account.
+ * With no roles, any active account passes (ADMIN or STAFF); with roles,
+ * the account's current role — read from the database — must be one of them.
  */
 export const Authenticated = (...roles: AuthRole[]) => SetMetadata(ROLES_KEY, roles)
 
@@ -29,10 +30,12 @@ export class AuthGuard implements CanActivate {
     private readonly authService: AuthService,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.getAllAndOverride<AuthRole[] | undefined>(ROLES_KEY, [context.getHandler(), context.getClass()])
     const request = context.switchToHttp().getRequest<Request & { user?: AuthUser | null }>()
-    const user = this.authService.verify(this.extractToken(request))
+    // Checked against the account on every request that carries a token:
+    // deactivated, signed out or re-passworded, the token stops working here.
+    const user = await this.authService.authenticate(this.extractToken(request))
     request.user = user
 
     if (roles === undefined) {

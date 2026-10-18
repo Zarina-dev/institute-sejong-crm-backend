@@ -16,25 +16,25 @@ export class TermsController {
 
   /** Admin: how many classes and events each semester holds, by code. */
   @Get('usage')
-  @Authenticated('admin')
+  @Authenticated()
   usage() {
     return this.termsService.usage()
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateTermDto) {
     return this.termsService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateTermDto) {
     return this.termsService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.termsService.remove(id)
   }

@@ -4,7 +4,7 @@ import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CoursesService } from './courses.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 @Controller('courses')
 export class CoursesController {
@@ -25,7 +25,7 @@ export class CoursesController {
     @Query('category') category?: string,
   ) {
     return this.coursesService.listCourses({
-      publishedOnly: publishedOnly === 'true' || !isAdmin(user),
+      publishedOnly: publishedOnly === 'true' || !isStaff(user),
       term: (typeof term === 'string' && term.trim()) || undefined,
       category: category === 'language' || category === 'culture' ? category : undefined,
     })
@@ -40,7 +40,7 @@ export class CoursesController {
   @Get('terms')
   termCounts(@CurrentUser() user: AuthUser | null, @Query('publishedOnly') publishedOnly?: string, @Query('category') category?: string) {
     return this.coursesService.countByTerm({
-      publishedOnly: publishedOnly === 'true' || !isAdmin(user),
+      publishedOnly: publishedOnly === 'true' || !isStaff(user),
       category: category === 'language' || category === 'culture' ? category : undefined,
     })
   }
@@ -51,31 +51,31 @@ export class CoursesController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateCourseDto) {
     return this.coursesService.createCourse(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateCourseDto) {
     return this.coursesService.updateCourse(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.coursesService.deleteCourse(id)
   }
 
   @Post(':id/publish')
-  @Authenticated('admin')
+  @Authenticated()
   publish(@Param('id', ParseUUIDPipe) id: string) {
     return this.coursesService.setPublished(id, true)
   }
 
   @Post(':id/unpublish')
-  @Authenticated('admin')
+  @Authenticated()
   unpublish(@Param('id', ParseUUIDPipe) id: string) {
     return this.coursesService.setPublished(id, false)
   }

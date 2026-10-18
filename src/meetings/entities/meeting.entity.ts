@@ -31,7 +31,7 @@ export type MeetingAttendee = {
 /**
  * 회의록 — internal minutes. Unlike every other table in this project these
  * rows never reach the public site: the controller marks *all* of its routes
- * `@Authenticated('admin')`, reads included.
+ * `@Authenticated()`, reads included.
  */
 @Entity('meeting_minutes')
 @Index('idx_meeting_held_on', ['heldOn'])

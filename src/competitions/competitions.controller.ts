@@ -5,7 +5,7 @@ import { CompetitionsService } from './competitions.service'
 import { CreateCompetitionDto, UpdateCompetitionDto } from './dto/competition.dto'
 import type { CompetitionKind } from './entities/competition.entity'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 /** Any name may be a competition, so the filter only has to be non-empty. */
 const asKind = (value?: unknown): CompetitionKind | undefined => (typeof value === 'string' && value.trim()) || undefined
@@ -21,7 +21,7 @@ export class CompetitionsController {
    */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('kind') kind?: string, @Query('all') all?: string) {
-    return this.competitionsService.list({ kind: asKind(kind), publishedOnly: all !== 'true' || !isAdmin(user) })
+    return this.competitionsService.list({ kind: asKind(kind), publishedOnly: all !== 'true' || !isStaff(user) })
   }
 
   @Get(':id')
@@ -30,19 +30,19 @@ export class CompetitionsController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateCompetitionDto) {
     return this.competitionsService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateCompetitionDto) {
     return this.competitionsService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.competitionsService.remove(id)
   }

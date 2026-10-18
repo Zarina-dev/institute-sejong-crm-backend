@@ -23,7 +23,7 @@ import { UpdateMaterialDto } from './dto/update-material.dto'
 import { MaterialsService, type MaterialsQuery } from './materials.service'
 import { r2Storage } from '../storage/r2-storage.service'
 import { materialFile, materialType, materialUploadOptions } from './upload.config'
-import { visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 /**
  * 학습자료실: the list and the download are public (the site has no student
@@ -36,7 +36,7 @@ export class MaterialsController {
   /** Visitors always get the published rows; only the admin may ask for drafts. */
   @Get()
   list(@Query() query: MaterialsQuery, @CurrentUser() user: AuthUser | null) {
-    return this.materialsService.listMaterials(user?.role === 'admin' ? query : { ...query, published: 'true' })
+    return this.materialsService.listMaterials(isStaff(user) ? query : { ...query, published: 'true' })
   }
 
   @Get(':id')
@@ -68,32 +68,32 @@ export class MaterialsController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   @UseInterceptors(FileInterceptor('file', materialUploadOptions))
   create(@Body() body: CreateMaterialDto, @UploadedFile() file?: Express.Multer.File) {
     return this.materialsService.createMaterial(body, file)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateMaterialDto) {
     return this.materialsService.updateMaterial(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.deleteMaterial(id)
   }
 
   @Post(':id/publish')
-  @Authenticated('admin')
+  @Authenticated()
   publish(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.setPublished(id, true)
   }
 
   @Post(':id/unpublish')
-  @Authenticated('admin')
+  @Authenticated()
   unpublish(@Param('id', ParseUUIDPipe) id: string) {
     return this.materialsService.setPublished(id, false)
   }

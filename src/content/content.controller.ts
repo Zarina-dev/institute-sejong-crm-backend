@@ -24,7 +24,7 @@ export class ContentController {
   }
 
   @Put(':slug/:locale')
-  @Authenticated('admin')
+  @Authenticated()
   upsert(@Param() params: ContentParamsDto, @Body() body: UpsertContentDto) {
     return this.contentService.upsert(params.slug, params.locale, body)
   }

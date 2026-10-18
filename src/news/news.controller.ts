@@ -4,7 +4,7 @@ import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto'
 import { NewsService } from './news.service'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 @Controller('news')
 export class NewsController {
@@ -13,7 +13,7 @@ export class NewsController {
   /** `GET /news` — published posts (public). `?all=true` adds the drafts, for the admin only. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string, @Query('limit') limit?: string) {
-    if (all === 'true' && isAdmin(user)) {
+    if (all === 'true' && isStaff(user)) {
       return this.newsService.listAll()
     }
 
@@ -27,31 +27,31 @@ export class NewsController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateNewsDto) {
     return this.newsService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateNewsDto) {
     return this.newsService.update(id, body)
   }
 
   @Post(':id/publish')
-  @Authenticated('admin')
+  @Authenticated()
   publish(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.setPublished(id, true)
   }
 
   @Post(':id/unpublish')
-  @Authenticated('admin')
+  @Authenticated()
   unpublish(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.setPublished(id, false)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.newsService.remove(id)
   }

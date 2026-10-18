@@ -4,7 +4,7 @@ import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateStudyAbroadDto, UpdateStudyAbroadDto } from './dto/study-abroad.dto'
 import { StudiesService } from './studies.service'
 import type { AuthUser } from '../auth/auth.service'
-import { isAdmin, visibleTo } from '../auth/visibility'
+import { isStaff, visibleTo } from '../auth/visibility'
 
 @Controller('studies')
 export class StudiesController {
@@ -13,7 +13,7 @@ export class StudiesController {
   /** `?all=true` adds the unpublished ones for the admin page. */
   @Get()
   list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
-    return this.studiesService.list({ publishedOnly: all !== 'true' || !isAdmin(user) })
+    return this.studiesService.list({ publishedOnly: all !== 'true' || !isStaff(user) })
   }
 
   @Get(':id')
@@ -22,19 +22,19 @@ export class StudiesController {
   }
 
   @Post()
-  @Authenticated('admin')
+  @Authenticated()
   create(@Body() body: CreateStudyAbroadDto) {
     return this.studiesService.create(body)
   }
 
   @Patch(':id')
-  @Authenticated('admin')
+  @Authenticated()
   update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateStudyAbroadDto) {
     return this.studiesService.update(id, body)
   }
 
   @Delete(':id')
-  @Authenticated('admin')
+  @Authenticated()
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.studiesService.remove(id)
   }

@@ -4,7 +4,7 @@ import { Authenticated } from '../auth/auth.guard'
 import { DashboardService } from './dashboard.service'
 
 @Controller('dashboard')
-@Authenticated('admin')
+@Authenticated()
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
