@@ -5,6 +5,7 @@ import compression from 'compression'
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppModule } from './app.module'
+import { httpCache } from './cache/http-cache'
 import { I18nExceptionFilter } from './common/i18n/i18n-exception.filter'
 import { parseMediaUrl, r2Storage } from './storage/r2-storage.service'
 
@@ -16,6 +17,10 @@ async function bootstrap() {
   // JSON shrinks to a fraction gzipped (the 179 records of 학당 발자취, with
   // their translations: ~175 kB → ~25 kB). Anything under 1 kB is sent as is.
   app.use(compression({ threshold: 1024 }))
+
+  // Public reads answered from Redis without touching Nest or the database;
+  // any change retires them (cache/http-cache.ts).
+  app.use(httpCache().middleware)
 
   // Behind a proxy (Cloudflare, a load balancer, nginx) the client's address
   // arrives in X-Forwarded-For. Express believes that header only from the
