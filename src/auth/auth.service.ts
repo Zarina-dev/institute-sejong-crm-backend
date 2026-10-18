@@ -1,5 +1,5 @@
 import { HttpException, HttpStatus, Injectable, Logger, UnauthorizedException } from '@nestjs/common'
-import { createHmac, timingSafeEqual } from 'crypto'
+import { createHmac, randomBytes, timingSafeEqual } from 'crypto'
 
 export type AuthRole = 'admin'
 
@@ -20,9 +20,9 @@ const LOCKOUT_MS = 15 * 60 * 1000
 /**
  * Stateless bearer tokens (HMAC-SHA256 over a base64url JSON payload — a
  * minimal JWT without the header). One signing secret, no sessions table;
- * a token is valid until it expires or the secret changes. The secret must
- * be set (`AUTH_SECRET`): without it the API does not start, since a known
- * secret would let anyone sign their own admin token.
+ * a token is valid until it expires or the secret changes. The secret comes
+ * from `AUTH_SECRET`; without it a random one is made at start (never a
+ * fixed default, which would let anyone sign their own admin token).
  *
  * Sign-in is limited per address: after 5 wrong passwords in
  * 15 minutes the address waits out the rest of them, so a password cannot be
@@ -37,12 +37,17 @@ export class AuthService {
 
   constructor() {
     const secret = process.env.AUTH_SECRET?.trim()
-    if (!secret) {
-      throw new Error(
-        'AUTH_SECRET is not set. Put a long random value in backend/.env (e.g. node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))").',
+    if (secret) {
+      this.secret = secret
+    } else {
+      // No secret configured: sign with a random one made at start. Nobody
+      // can guess it, so no one can forge a token, but every restart signs
+      // the admin out — set AUTH_SECRET to keep sessions across restarts.
+      this.secret = randomBytes(32).toString('hex')
+      this.logger.warn(
+        'AUTH_SECRET is not set — using a random secret for this run; the admin is signed out on every restart. Set AUTH_SECRET in the environment.',
       )
     }
-    this.secret = secret
 
     // There is no built-in account: without these nobody can sign in, and
     // the login form would only say "wrong password". Say why, at start.
