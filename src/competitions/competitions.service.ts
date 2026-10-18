@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { sanitizeRichText } from '../common/sanitize'
-import { removeUploadedFile } from '../common/uploaded-files'
 import { GalleryAlbum } from '../gallery/entities/gallery-album.entity'
 import { CreateCompetitionDto, UpdateCompetitionDto } from './dto/competition.dto'
 import { Competition, type CompetitionKind, type CompetitionWinner } from './entities/competition.entity'
@@ -151,8 +150,6 @@ export class CompetitionsService implements OnApplicationBootstrap {
 
   async update(id: string, dto: UpdateCompetitionDto) {
     const competition = await this.getById(id)
-    const previousCover = competition.coverImage
-    const previousImages = competition.images ?? []
 
     Object.assign(competition, dto, {
       ...(dto.summary !== undefined ? { summary: sanitizeRichText(dto.summary) } : {}),
@@ -162,19 +159,11 @@ export class CompetitionsService implements OnApplicationBootstrap {
       ...(dto.translations !== undefined ? { translations: recordTranslations(dto.translations) } : {}),
     })
 
-    const saved = await this.competitionRepository.save(competition)
-
-    if (dto.coverImage !== undefined && previousCover && previousCover !== saved.coverImage) {
-      await removeUploadedFile(previousCover)
-    }
-
-    // Photos dropped from the list should not linger on disk.
-    if (dto.images !== undefined) {
-      const kept = new Set(saved.images ?? [])
-      await Promise.all(previousImages.filter((url) => !kept.has(url)).map((url) => removeUploadedFile(url)))
-    }
-
-    return saved
+    // A photo taken off the record is not deleted here: records carried over
+    // from the old gallery share their files with its albums (and a cover may
+    // also be one of the photos). MediaSweepService removes a file once no
+    // row mentions it.
+    return this.competitionRepository.save(competition)
   }
 
   async remove(id: string) {

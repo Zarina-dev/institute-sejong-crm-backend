@@ -1,12 +1,14 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CompetitionsService } from './competitions.service'
 import { CreateCompetitionDto, UpdateCompetitionDto } from './dto/competition.dto'
 import type { CompetitionKind } from './entities/competition.entity'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 /** Any name may be a competition, so the filter only has to be non-empty. */
-const asKind = (value?: string): CompetitionKind | undefined => value?.trim() || undefined
+const asKind = (value?: unknown): CompetitionKind | undefined => (typeof value === 'string' && value.trim()) || undefined
 
 @Controller('competitions')
 export class CompetitionsController {
@@ -18,13 +20,13 @@ export class CompetitionsController {
    * admin page.
    */
   @Get()
-  list(@Query('kind') kind?: string, @Query('all') all?: string) {
-    return this.competitionsService.list({ kind: asKind(kind), publishedOnly: all !== 'true' })
+  list(@CurrentUser() user: AuthUser | null, @Query('kind') kind?: string, @Query('all') all?: string) {
+    return this.competitionsService.list({ kind: asKind(kind), publishedOnly: all !== 'true' || !isAdmin(user) })
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.competitionsService.getById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.competitionsService.getById(id), 'errors.competition.notFound')
   }
 
   @Post()

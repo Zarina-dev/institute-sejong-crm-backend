@@ -23,6 +23,7 @@ import { UpdateMaterialDto } from './dto/update-material.dto'
 import { MaterialsService, type MaterialsQuery } from './materials.service'
 import { r2Storage } from '../storage/r2-storage.service'
 import { materialFile, materialType, materialUploadOptions } from './upload.config'
+import { visibleTo } from '../auth/visibility'
 
 /**
  * 학습자료실: the list and the download are public (the site has no student
@@ -39,8 +40,8 @@ export class MaterialsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.materialsService.getMaterialById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.materialsService.getMaterialById(id), 'errors.material.notFound')
   }
 
   @Get(':id/download')

@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
+import compression from 'compression'
 import type { NextFunction, Request, Response } from 'express'
 
 import { AppModule } from './app.module'
@@ -11,6 +12,10 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
   app.setGlobalPrefix('api')
+
+  // JSON shrinks to a fraction gzipped (the 179 records of 학당 발자취, with
+  // their translations: ~175 kB → ~25 kB). Anything under 1 kB is sent as is.
+  app.use(compression({ threshold: 1024 }))
 
   // Behind a proxy (Cloudflare, a load balancer, nginx) the client's address
   // arrives in X-Forwarded-For. Express believes that header only from the

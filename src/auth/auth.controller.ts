@@ -1,7 +1,9 @@
-import { Body, Controller, Get, Post } from '@nestjs/common'
+import { Body, Controller, Get, Post, Req } from '@nestjs/common'
+import type { Request } from 'express'
 
 import { Authenticated, CurrentUser } from './auth.guard'
 import { AuthService, type AuthUser } from './auth.service'
+import { clientIp } from '../audit/client-info'
 import { LoginDto } from './dto/login.dto'
 
 @Controller('auth')
@@ -10,8 +12,8 @@ export class AuthController {
 
   /** { role, token } for the administrator; there is no other account. */
   @Post('login')
-  login(@Body() body: LoginDto) {
-    return this.authService.login(body.username.trim(), body.password)
+  login(@Body() body: LoginDto, @Req() request: Request) {
+    return this.authService.login(body.username.trim(), body.password, clientIp(request))
   }
 
   /** Lets a client check whether its stored token is still valid. */

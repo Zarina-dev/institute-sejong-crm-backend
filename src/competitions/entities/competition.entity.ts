@@ -3,32 +3,13 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGener
 import type { Translations } from '../../common/translations'
 
 /**
- * The kinds of event the institute has always had: its two competitions and
- * the occasions it used to keep photo albums for (개강식, 역사 탐방 …). They
- * are codes rather than names because the site translates them; a kind
- * added later is stored under the name the admin gives it, so the list is
- * open. Since 행사 사진첩 and 대회 기록 became one record, a "competition" row
- * is any event — participants and results are simply left empty when there
+ * What kind of event a record is: a code the site translates (speech,
+ * opening, culture … — the list and its labels live in the frontend's
+ * features/competitions), or a name the admin typed for a new kind.
+ * Since 행사 사진첩 and 대회 기록 became one record, a "competition" row is
+ * any event — participants and results are simply left empty when there
  * are none.
  */
-export const BUILTIN_COMPETITION_KINDS = [
-  'speech',
-  'writing',
-  'foodExperience',
-  'opening',
-  'graduation',
-  'folkGames',
-  'historyTour',
-  'camp',
-  'ska',
-  'topik',
-  'culture',
-  'kpop',
-  'quiz',
-  'olympiad',
-  'awards',
-  'other',
-] as const
 export type CompetitionKind = string
 
 /** One line of the results table: 순위 · 이름 · 비고 (반, 상품, 소속 …). */

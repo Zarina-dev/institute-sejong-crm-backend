@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateStudyAbroadDto, UpdateStudyAbroadDto } from './dto/study-abroad.dto'
 import { StudiesService } from './studies.service'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 @Controller('studies')
 export class StudiesController {
@@ -10,13 +12,13 @@ export class StudiesController {
 
   /** `?all=true` adds the unpublished ones for the admin page. */
   @Get()
-  list(@Query('all') all?: string) {
-    return this.studiesService.list({ publishedOnly: all !== 'true' })
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
+    return this.studiesService.list({ publishedOnly: all !== 'true' || !isAdmin(user) })
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.studiesService.getById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.studiesService.getById(id), 'errors.study.notFound')
   }
 
   @Post()

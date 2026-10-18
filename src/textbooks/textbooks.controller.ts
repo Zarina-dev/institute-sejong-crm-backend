@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateTextbookDto, ReorderTextbooksDto, UpdateTextbookDto } from './dto/textbook.dto'
 import { TextbooksService } from './textbooks.service'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 @Controller('textbooks')
 export class TextbooksController {
@@ -10,13 +12,13 @@ export class TextbooksController {
 
   /** `GET /textbooks` — published ones (public). `?all=true` for the admin page. */
   @Get()
-  list(@Query('all') all?: string) {
-    return all === 'true' ? this.textbooksService.listAll() : this.textbooksService.listPublished()
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
+    return all === 'true' && isAdmin(user) ? this.textbooksService.listAll() : this.textbooksService.listPublished()
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.textbooksService.getById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.textbooksService.getById(id), 'errors.textbook.notFound')
   }
 
   @Post()

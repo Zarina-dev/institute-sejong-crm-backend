@@ -1,24 +1,32 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CoursesService } from './courses.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) {}
 
   /**
-   * Public catalogue; `?publishedOnly=true` is what the site uses.
+   * Public catalogue; `?publishedOnly=true` is what the site uses, and
+   * what anyone but the admin gets regardless.
    * `?term=2026-2` narrows it to one semester and `?category=culture` to one
    * list — every page shows a single semester, so it should not download
    * every class the institute has ever run to show one.
    */
   @Get()
-  list(@Query('publishedOnly') publishedOnly?: string, @Query('term') term?: string, @Query('category') category?: string) {
+  list(
+    @CurrentUser() user: AuthUser | null,
+    @Query('publishedOnly') publishedOnly?: string,
+    @Query('term') term?: string,
+    @Query('category') category?: string,
+  ) {
     return this.coursesService.listCourses({
-      publishedOnly: publishedOnly === 'true',
-      term: term?.trim() || undefined,
+      publishedOnly: publishedOnly === 'true' || !isAdmin(user),
+      term: (typeof term === 'string' && term.trim()) || undefined,
       category: category === 'language' || category === 'culture' ? category : undefined,
     })
   }
@@ -30,16 +38,16 @@ export class CoursesController {
    * take "terms" for an id.
    */
   @Get('terms')
-  termCounts(@Query('publishedOnly') publishedOnly?: string, @Query('category') category?: string) {
+  termCounts(@CurrentUser() user: AuthUser | null, @Query('publishedOnly') publishedOnly?: string, @Query('category') category?: string) {
     return this.coursesService.countByTerm({
-      publishedOnly: publishedOnly === 'true',
+      publishedOnly: publishedOnly === 'true' || !isAdmin(user),
       category: category === 'language' || category === 'culture' ? category : undefined,
     })
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.coursesService.getCourseById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.coursesService.getCourseById(id), 'errors.course.notFound')
   }
 
   @Post()

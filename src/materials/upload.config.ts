@@ -5,14 +5,14 @@ import { extname } from 'path'
 import { localized } from '../common/i18n/i18n-exception.filter'
 import { R2MulterStorage } from '../storage/r2-multer-storage'
 
-export const MAX_MATERIAL_FILE_SIZE = 10 * 1024 * 1024
+const MAX_MATERIAL_FILE_SIZE = 10 * 1024 * 1024
 
 /**
  * Accepted upload extensions. Mirrored in the frontend `accept` list —
  * keep the two in sync. `.hwp`/`.hwpx` are the Korean office formats the
  * institute actually produces; `.zip` for bundled lesson packs.
  */
-export const ALLOWED_MATERIAL_EXTENSIONS = [
+const ALLOWED_MATERIAL_EXTENSIONS = [
   'pdf',
   'doc',
   'docx',

@@ -131,11 +131,16 @@ export class TermsService implements OnApplicationBootstrap {
 
     // The code is the key classes already carry, so it only changes when the
     // term is actually moved to another year or kind.
+    const oldCode = term.code
     if (movedSlot) {
       term.code = await this.nextCode(term.year, term.kind, id)
     }
 
     const saved = await this.termRepository.save(term)
+
+    if (saved.code !== oldCode) {
+      await this.courseRepository.update({ term: oldCode }, { term: saved.code })
+    }
 
     // A class that runs the whole semester runs the whole of the new one too.
     // A class with its own dates keeps them: they were the admin's decision.
@@ -242,9 +247,12 @@ export class TermsService implements OnApplicationBootstrap {
       return `${year}-${suffix}`
     }
 
-    const breaks = ofYear.filter((term) => term.kind === 'break').length
+    // Past every number the year has used, the trash included: "count + 1"
+    // would hand out b2 again once b1 is deleted while b2 still exists.
+    const used = await this.termRepository.find({ withDeleted: true, where: { year, kind: 'break' } })
+    const highest = Math.max(0, ...used.map((term) => Number(/-b(\d+)$/.exec(term.code)?.[1] ?? 0)))
 
-    return `${year}-b${breaks + 1}`
+    return `${year}-b${highest + 1}`
   }
 
   private assertPeriod(startDate: string, endDate: string) {

@@ -7,6 +7,9 @@ import { CreateMaterialDto } from './dto/create-material.dto'
 import { UpdateMaterialDto } from './dto/update-material.dto'
 import { LearningMaterial } from './entities/learning-material.entity'
 
+/** Text matched literally by ILIKE: % and _ are not wildcards. */
+const likeEscape = (text: string) => text.replace(/[\\%_]/g, '\\$&')
+
 export type MaterialsQuery = {
   page?: number
   limit?: number
@@ -47,7 +50,7 @@ export class MaterialsService implements OnModuleInit {
     let linked = 0
 
     for (const material of detached) {
-      const course = await this.courseRepository.findOne({ where: { title: ILike(material.course.trim()) } })
+      const course = await this.courseRepository.findOne({ where: { title: ILike(likeEscape(material.course.trim())) } })
 
       if (course) {
         material.courseId = course.id
@@ -72,9 +75,10 @@ export class MaterialsService implements OnModuleInit {
   }
 
   async listMaterials(query: MaterialsQuery) {
-    const page = Math.max(1, Number(query.page ?? 1))
-    const limit = Math.min(50, Math.max(1, Number(query.limit ?? 20)))
-    const search = query.search?.trim()
+    // Straight from the URL: "?page=abc" or a repeated "?search=" must not reach the query as NaN or an array.
+    const page = Math.max(1, Math.floor(Number(query.page)) || 1)
+    const limit = Math.min(50, Math.max(1, Math.floor(Number(query.limit)) || 20))
+    const search = typeof query.search === 'string' ? query.search.trim() : undefined
     const sortBy = SORTABLE.includes(query.sortBy as (typeof SORTABLE)[number]) ? query.sortBy! : 'updatedAt'
     const sortOrder = query.sortOrder === 'ASC' ? 'ASC' : 'DESC'
 
@@ -85,7 +89,7 @@ export class MaterialsService implements OnModuleInit {
     }
 
     if (search) {
-      qb.andWhere('(material.title ILIKE :search OR material.description ILIKE :search)', { search: `%${search}%` })
+      qb.andWhere('(material.title ILIKE :search OR material.description ILIKE :search)', { search: `%${likeEscape(search)}%` })
     }
 
     if (query.subject) {

@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { CreateScheduleEventDto, UpdateScheduleEventDto } from './dto/schedule-event.dto'
 import { EventsService } from './events.service'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin } from '../auth/visibility'
 
 @Controller('events')
 export class EventsController {
@@ -10,8 +12,8 @@ export class EventsController {
 
   /** `?term=2026-2` for one semester's table; `?all=true` adds hidden rows. */
   @Get()
-  list(@Query('term') term?: string, @Query('all') all?: string) {
-    return this.eventsService.list({ publishedOnly: all !== 'true', termCode: term || undefined })
+  list(@CurrentUser() user: AuthUser | null, @Query('term') term?: string, @Query('all') all?: string) {
+    return this.eventsService.list({ publishedOnly: all !== 'true' || !isAdmin(user), termCode: typeof term === 'string' && term ? term : undefined })
   }
 
   @Post()

@@ -44,7 +44,8 @@ export const TRASH_KINDS: TrashKind[] = [
     entity: Competition,
     label: (row) => row.title,
     detail: (row) => String(row.year),
-    cleanup: (row) => removeAll([row.coverImage, ...(row.images ?? [])]),
+    // Its photos may also belong to an old gallery album: the media sweep
+    // removes them once nothing mentions them.
   }),
   kind<StudyAbroad>({
     type: 'studies',

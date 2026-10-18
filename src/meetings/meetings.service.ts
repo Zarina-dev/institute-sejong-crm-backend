@@ -8,7 +8,12 @@ import { CreateMeetingDto, UpdateMeetingDto } from './dto/meeting.dto'
 import { Meeting, type MeetingAttachment, type MeetingAttendee } from './entities/meeting.entity'
 
 /** The one-line 참석자, written from the list so the two never disagree. */
-const namesOf = (list: MeetingAttendee[]) => list.map((attendee) => attendee.name.trim()).join(', ')
+/** The names in one line, for the list and search; varchar(500), so a long list is cut (the rows keep everyone). */
+const namesOf = (list: MeetingAttendee[]) =>
+  list
+    .map((attendee) => attendee.name.trim())
+    .join(', ')
+    .slice(0, 500)
 
 /** Every file a row owns: what was handed out, and the original minutes. */
 const filesOf = (meeting: { attachments?: MeetingAttachment[] | null; original?: MeetingAttachment | null }) => [
@@ -69,7 +74,7 @@ export class MeetingsService {
       drafter: dto.drafter ?? '',
       approver: dto.approver ?? '',
       attendeeList: dto.attendeeList ?? [],
-      attendees: dto.attendeeList ? namesOf(dto.attendeeList) : (dto.attendees ?? ''),
+      attendees: dto.attendeeList ? namesOf(dto.attendeeList) : (dto.attendees ?? '').slice(0, 500),
       original: dto.original ?? null,
       body: sanitizeRichText(dto.body ?? ''),
       decisions: sanitizeRichText(dto.decisions ?? ''),

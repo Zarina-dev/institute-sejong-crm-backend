@@ -1,8 +1,10 @@
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
 import { CreateStaffDto, ReorderStaffDto, UpdateStaffDto } from './dto/staff.dto'
 import { StaffService } from './staff.service'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 @Controller('staff')
 export class StaffController {
@@ -10,13 +12,13 @@ export class StaffController {
 
   /** `GET /staff` — published members (public). `?all=true` for the admin page. */
   @Get()
-  list(@Query('all') all?: string) {
-    return all === 'true' ? this.staffService.listAll() : this.staffService.listPublished()
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
+    return all === 'true' && isAdmin(user) ? this.staffService.listAll() : this.staffService.listPublished()
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.staffService.getById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.staffService.getById(id), 'errors.staff.notFound')
   }
 
   @Post()

@@ -6,7 +6,7 @@ import { ATTENDEE_ROLES, type AttendeeRole } from '../entities/meeting.entity'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
-export class MeetingAttachmentDto {
+class MeetingAttachmentDto {
   /** Only files that came back from `POST /uploads/documents` are accepted. */
   @Matches(/^\/uploads\/documents\/[\w.-]+$/, { message: 'validation.meeting.attachmentInvalid' })
   url!: string
@@ -24,7 +24,7 @@ export class MeetingAttachmentDto {
   type!: string
 }
 
-export class MeetingAttendeeDto {
+class MeetingAttendeeDto {
   @IsOptional()
   @ValidateIf((_, value) => value !== null)
   @IsUUID()

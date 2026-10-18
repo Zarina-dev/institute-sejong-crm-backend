@@ -11,14 +11,9 @@ import { r2Storage } from '../storage/r2-storage.service'
 
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
 export const MAX_DOCUMENT_SIZE = 20 * 1024 * 1024
-/** A few minutes of phone video; anything longer belongs on a video site. */
-export const MAX_VIDEO_SIZE = 300 * 1024 * 1024
 
 const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif'] as const
 const IMAGE_MIME = /^image\/(jpeg|png|webp|gif)$/
-
-const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'm4v'] as const
-const VIDEO_MIME = /^video\/(mp4|webm|quicktime|x-m4v)$/
 
 /**
  * Attachments for 회의록. `.hwp` and `.hwpx` are what the office actually
@@ -59,28 +54,17 @@ const extensionOf = (name: string) =>
  * *and* declared MIME type are checked before a byte is stored — either
  * alone is trivial to spoof.
  */
-function mediaUploadOptions(
-  kind: 'images' | 'videos',
-  extensions: readonly string[],
-  mime: RegExp,
-  maxSize: number,
-  typeMessage: 'validation.image.type' | 'validation.video.type',
-): MulterOptions {
-  return {
-    storage: new R2MulterStorage(kind),
-    limits: { fileSize: maxSize, files: 1 },
-    fileFilter: (_req, file, cb) => {
-      if (!extensions.includes(extensionOf(file.originalname)) || !mime.test(file.mimetype)) {
-        cb(new BadRequestException(localized(typeMessage, { allowed: extensions.map((e) => `.${e}`).join(', ') })), false)
-        return
-      }
-      cb(null, true)
-    },
-  }
+const imageUploadOptions: MulterOptions = {
+  storage: new R2MulterStorage('images'),
+  limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!(IMAGE_EXTENSIONS as readonly string[]).includes(extensionOf(file.originalname)) || !IMAGE_MIME.test(file.mimetype)) {
+      cb(new BadRequestException(localized('validation.image.type', { allowed: IMAGE_EXTENSIONS.map((e) => `.${e}`).join(', ') })), false)
+      return
+    }
+    cb(null, true)
+  },
 }
-
-const imageUploadOptions = mediaUploadOptions('images', IMAGE_EXTENSIONS, IMAGE_MIME, MAX_UPLOAD_SIZE, 'validation.image.type')
-const videoUploadOptions = mediaUploadOptions('videos', VIDEO_EXTENSIONS, VIDEO_MIME, MAX_VIDEO_SIZE, 'validation.video.type')
 
 const documentUploadOptions: MulterOptions = {
   storage: new R2MulterStorage('documents', (name) => documentType(extensionOf(name))),
@@ -110,14 +94,6 @@ export class UploadsController {
   @UseInterceptors(FileInterceptor('file', imageUploadOptions))
   uploadImage(@UploadedFile() file?: Express.Multer.File) {
     return this.describe(file, '/uploads/images')
-  }
-
-  /** Videos (mp4, webm, mov) — the public bucket, streamed in parts. */
-  @Post('videos')
-  @Authenticated('admin')
-  @UseInterceptors(FileInterceptor('file', videoUploadOptions))
-  uploadVideo(@UploadedFile() file?: Express.Multer.File) {
-    return this.describe(file, '/uploads/videos')
   }
 
   /** 회의록 attachments — .hwp, .pdf and the Office formats; the private bucket. */

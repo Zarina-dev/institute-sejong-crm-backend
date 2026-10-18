@@ -8,10 +8,10 @@ import { r2Storage, STORED_KINDS, type StoredKind } from './r2-storage.service'
 const GRACE = 24 * 60 * 60 * 1000
 const EVERY = 6 * 60 * 60 * 1000
 /** Every stored file is named <uuid>.<ext>, wherever the path to it is written. */
-/** A material's storageKey from before R2 is a Windows path (uploads\materials\<file>), hence either slash. */
-const REFERENCE = /(images|videos|documents|materials)[\\/]([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+)/gi
+/** A material's storageKey from before R2 is a Windows path (uploads\materials\<file>), hence either slash — doubled in a row's text form. */
+const REFERENCE = /(images|videos|documents|materials)[\\/]+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.[a-z0-9]+)/gi
 
-export type SweepResult = {
+type SweepResult = {
   referenced: number
   removed: Array<{ kind: StoredKind; file: string; bucket: string }>
   kept: number

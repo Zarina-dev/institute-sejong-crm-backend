@@ -4,7 +4,7 @@ import type { Request, Response } from 'express'
 import { resolveLanguage, translateMessage, type MessageKey } from './messages'
 
 /** Payload for an HttpException whose message needs placeholders. */
-export type LocalizedMessage = { key: MessageKey; params?: Record<string, string | number> }
+type LocalizedMessage = { key: MessageKey; params?: Record<string, string | number> }
 
 /**
  * Argument for `new BadRequestException(localized('…', { ext }))`.

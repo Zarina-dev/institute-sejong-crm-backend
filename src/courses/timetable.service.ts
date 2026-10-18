@@ -15,7 +15,7 @@ export type TimetableQuery = {
 }
 
 /** One generated class on a concrete date. `id` is stable per course/date/slot. */
-export type TimetableEntry = {
+type TimetableEntry = {
   id: string
   courseId: string
   date: string
@@ -32,8 +32,16 @@ export type TimetableEntry = {
 
 const isoDate = (d: Date) => d.toISOString().slice(0, 10)
 
-/** Monday..Sunday containing `today`, as ISO dates (UTC — dates only, no times). */
-export function currentWeek(today = new Date()) {
+/** Kyrgyzstan is UTC+6 all year (no daylight saving). */
+const INSTITUTE_OFFSET = 6 * 60 * 60 * 1000
+
+/**
+ * Monday..Sunday containing today in Osh, as ISO dates. Shifting by the
+ * offset and reading UTC fields gives the local calendar date, so a Monday
+ * before 06:00 is still this week, not the last.
+ */
+function currentWeek(now = new Date()) {
+  const today = new Date(now.getTime() + INSTITUTE_OFFSET)
   const monday = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()))
   monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7))
   const sunday = new Date(monday)

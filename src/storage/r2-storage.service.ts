@@ -22,8 +22,8 @@ import type { Readable } from 'stream'
  */
 export const STORED_KINDS = ['images', 'videos', 'documents', 'materials'] as const
 export type StoredKind = (typeof STORED_KINDS)[number]
-export type MediaKind = 'images' | 'videos'
-export const MEDIA_KINDS: readonly MediaKind[] = ['images', 'videos']
+type MediaKind = 'images' | 'videos'
+const MEDIA_KINDS: readonly MediaKind[] = ['images', 'videos']
 const PUBLIC_KINDS: readonly StoredKind[] = MEDIA_KINDS
 
 /** `/uploads/<kind>/<file>` — what records store for images, videos and documents. */
@@ -86,7 +86,7 @@ function readConfig(): R2Config {
 }
 
 /** `filename*` carries Korean / Russian names; the plain one is an ASCII stand-in for old clients. */
-export function contentDisposition(type: 'inline' | 'attachment', name: string) {
+function contentDisposition(type: 'inline' | 'attachment', name: string) {
   const ascii = name.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_')
   return `${type}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`
 }
@@ -97,7 +97,7 @@ export function contentDisposition(type: 'inline' | 'attachment', name: string) 
  * An object's key is `<kind>/<file>` — the stored `/uploads/<kind>/<file>`
  * path without its prefix — so records never needed rewriting.
  */
-export class R2StorageService {
+class R2StorageService {
   private readonly logger = new Logger('R2Storage')
   private readonly config: R2Config
   private readonly client: S3Client

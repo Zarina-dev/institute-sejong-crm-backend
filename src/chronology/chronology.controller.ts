@@ -1,8 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { ChronologyService } from './chronology.service'
 import { CreateChronologyEntryDto, UpdateChronologyEntryDto } from './dto/chronology-entry.dto'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin } from '../auth/visibility'
 
 @Controller('chronology')
 export class ChronologyController {
@@ -10,8 +12,8 @@ export class ChronologyController {
 
   /** Published entries (public); `?all=true` adds the hidden ones for the admin. */
   @Get()
-  list(@Query('all') all?: string) {
-    return this.chronologyService.list({ publishedOnly: all !== 'true' })
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
+    return this.chronologyService.list({ publishedOnly: all !== 'true' || !isAdmin(user) })
   }
 
   @Post()

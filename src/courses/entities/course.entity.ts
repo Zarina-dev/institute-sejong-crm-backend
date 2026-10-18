@@ -2,14 +2,14 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryGener
 import type { Translations } from '../../common/translations'
 
 /** ISO weekday: 1 = Monday … 7 = Sunday. Times are HH:mm. */
-export type CourseSession = {
+type CourseSession = {
   weekday: 1 | 2 | 3 | 4 | 5 | 6 | 7
   startTime: string
   endTime: string
   classroom?: string | null
 }
 
-export type CourseCategory = 'language' | 'culture'
+type CourseCategory = 'language' | 'culture'
 
 @Entity('courses')
 // Every list reads one semester of one category; history grows by a

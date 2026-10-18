@@ -34,7 +34,9 @@ export class TrashService implements OnApplicationBootstrap, OnApplicationShutdo
 
   async onApplicationBootstrap() {
     await this.purgeExpired()
-    this.timer = setInterval(() => void this.purgeExpired(), PURGE_EVERY)
+    this.timer = setInterval(() => {
+      this.purgeExpired().catch((err: unknown) => this.logger.error(`Purging the trash failed: ${err instanceof Error ? err.message : String(err)}`))
+    }, PURGE_EVERY)
     // A pending purge must not keep the process alive on shutdown.
     this.timer.unref()
   }

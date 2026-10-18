@@ -1,4 +1,4 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { createHmac, timingSafeEqual } from 'crypto'
 
 export type AuthRole = 'admin'
@@ -11,13 +11,22 @@ export type AuthUser = {
 }
 
 const TOKEN_TTL_SECONDS = 12 * 60 * 60
-const DEV_SECRET = 'institut-dev-secret-change-me'
+
+/** Wrong passwords allowed from one address before it has to wait. */
+const MAX_FAILURES = 5
+/** How long the failures are remembered, and how long the wait is. */
+const LOCKOUT_MS = 15 * 60 * 1000
 
 /**
  * Stateless bearer tokens (HMAC-SHA256 over a base64url JSON payload — a
  * minimal JWT without the header). One signing secret, no sessions table;
  * a token is valid until it expires or the secret changes. The secret must
- * be set in production (`AUTH_SECRET`); the dev fallback is logged loudly.
+ * be set (`AUTH_SECRET`): without it the API does not start, since a known
+ * secret would let anyone sign their own admin token.
+ *
+ * Sign-in is limited per address: after 5 wrong passwords in
+ * 15 minutes the address waits out the rest of them, so a password cannot be
+ * guessed by trying a dictionary. Kept in memory: a restart forgets it.
  */
 @Injectable()
 export class AuthService {
@@ -27,11 +36,13 @@ export class AuthService {
   private readonly adminPassword = process.env.ADMIN_PASSWORD
 
   constructor() {
-    this.secret = process.env.AUTH_SECRET || DEV_SECRET
-
-    if (this.secret === DEV_SECRET) {
-      this.logger.warn('AUTH_SECRET is not set — using the development secret. Set it before deploying.')
+    const secret = process.env.AUTH_SECRET?.trim()
+    if (!secret) {
+      throw new Error(
+        'AUTH_SECRET is not set. Put a long random value in backend/.env (e.g. node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))").',
+      )
     }
+    this.secret = secret
 
     // There is no built-in account: without these nobody can sign in, and
     // the login form would only say "wrong password". Say why, at start.
@@ -40,16 +51,42 @@ export class AuthService {
     }
   }
 
+  /** Wrong passwords per address: how many, and since when. */
+  private readonly failures = new Map<string, { count: number; since: number }>()
+
   /** The site has one account: the administrator, from the environment. */
-  login(username: string, password: string) {
+  login(username: string, password: string, ip: string | null) {
     const { adminUsername, adminPassword } = this
+    const key = ip ?? 'unknown'
+    const now = Date.now()
+    const record = this.failures.get(key)
+
+    if (record && now - record.since > LOCKOUT_MS) {
+      this.failures.delete(key)
+    } else if (record && record.count >= MAX_FAILURES) {
+      throw new HttpException('errors.login.tooMany', HttpStatus.TOO_MANY_REQUESTS)
+    }
 
     // No account configured: nobody signs in (see the error logged at start).
     if (!adminUsername || !adminPassword || username !== adminUsername || !this.safeEqual(password, adminPassword)) {
+      this.noteFailure(key, now)
       throw new UnauthorizedException('errors.login.invalid')
     }
 
+    this.failures.delete(key)
     return { role: 'admin' as const, token: this.sign({ role: 'admin', username }) }
+  }
+
+  private noteFailure(key: string, now: number) {
+    const record = this.failures.get(key)
+    this.failures.set(key, record ? { ...record, count: record.count + 1 } : { count: 1, since: now })
+
+    // Many addresses trying at once: forget the ones whose time is up.
+    if (this.failures.size > 1000) {
+      for (const [address, { since }] of this.failures) {
+        if (now - since > LOCKOUT_MS) this.failures.delete(address)
+      }
+    }
   }
 
   sign(payload: Omit<AuthUser, 'exp'>): string {

@@ -14,7 +14,7 @@ export function clientIp(request: Request): string | null {
 }
 
 /** Loopback, private, link-local and unique-local ranges: no place on a map. */
-export function isLocalIp(ip: string) {
+function isLocalIp(ip: string) {
   if (isIP(ip) === 4) {
     const [a, b] = ip.split('.').map(Number)
     return (

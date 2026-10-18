@@ -13,7 +13,7 @@ const DAY = 24 * 60 * 60 * 1000
 
 export type AuditQuery = { page?: number; limit?: number; action?: string; type?: string; q?: string }
 
-export type AuditEntry = Pick<AuditLogEntry, 'actor' | 'action' | 'entityType' | 'entityId' | 'label' | 'changes' | 'ip' | 'device'>
+type AuditEntry = Pick<AuditLogEntry, 'actor' | 'action' | 'entityType' | 'entityId' | 'label' | 'changes' | 'ip' | 'device'>
 
 @Injectable()
 export class AuditService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -21,7 +21,8 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
   private timer: NodeJS.Timeout | null = null
 
   constructor(
-    @InjectRepository(AuditLogEntry) private readonly entries: Repository<AuditLogEntry>,
+    @InjectRepository(AuditLogEntry)
+    private readonly entries: Repository<AuditLogEntry>,
     @InjectDataSource() private readonly dataSource: DataSource,
   ) {}
 

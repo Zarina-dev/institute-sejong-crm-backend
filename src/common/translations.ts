@@ -5,7 +5,7 @@ import { registerDecorator, type ValidationOptions } from 'class-validator'
  * always there; these are its translations, each optional — a field left
  * untranslated falls back to the Korean on the site.
  */
-export const TRANSLATION_LANGUAGES = ['en', 'ru', 'ky'] as const
+const TRANSLATION_LANGUAGES = ['en', 'ru', 'ky'] as const
 export type TranslationLanguage = (typeof TRANSLATION_LANGUAGES)[number]
 
 /** `{ en: { title: '…' }, ru: { … }, ky: { … } }` — only the translated fields. */

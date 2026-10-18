@@ -22,7 +22,7 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 const trimmed = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value)
 
-export class CompetitionWinnerDto {
+class CompetitionWinnerDto {
   @IsInt()
   @Min(1)
   @Max(99)

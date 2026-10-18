@@ -15,7 +15,7 @@ import { cleanTranslations } from '../common/translations'
  * 'YYYY-2'). Once 학기 관리 holds a row covering the date, that row wins:
  * when a semester runs is the institute's decision, not the calendar's.
  */
-export function termFromDate(date: string | null | undefined): string | null {
+function termFromDate(date: string | null | undefined): string | null {
   if (!date) {
     return null
   }

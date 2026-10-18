@@ -4,7 +4,6 @@ import {
   ArrayMaxSize,
   IsArray,
   IsBoolean,
-  IsDateString,
   IsIn,
   IsInt,
   IsNumber,
@@ -19,6 +18,9 @@ import {
   ValidateNested,
 } from 'class-validator'
 import { IsTranslations, type Translations } from '../../common/translations'
+
+/** A calendar date, exactly YYYY-MM-DD: the columns hold it as text and compare it as text. */
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 
@@ -114,11 +116,11 @@ export class CreateCourseDto {
    * may be left out when `term` names one.
    */
   @IsOptional()
-  @IsDateString({}, { message: 'validation.course.startDateRequired' })
+  @Matches(ISO_DATE, { message: 'validation.course.startDateRequired' })
   startDate?: string
 
   @IsOptional()
-  @IsDateString({}, { message: 'validation.course.endDateRequired' })
+  @Matches(ISO_DATE, { message: 'validation.course.endDateRequired' })
   endDate?: string
 
   @IsOptional()

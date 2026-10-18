@@ -1,21 +1,19 @@
-import { Authenticated } from '../auth/auth.guard'
+import { Authenticated, CurrentUser } from '../auth/auth.guard'
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
 
 import { CreateNewsDto, UpdateNewsDto } from './dto/news.dto'
 import { NewsService } from './news.service'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 
 @Controller('news')
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
-  /**
-   * `GET /news` — published posts (public). `?all=true` returns drafts too;
-   * it is what the admin page uses. There is no auth layer yet, so this is a
-   * convention, not a boundary — same as every other admin endpoint.
-   */
+  /** `GET /news` — published posts (public). `?all=true` adds the drafts, for the admin only. */
   @Get()
-  list(@Query('all') all?: string, @Query('limit') limit?: string) {
-    if (all === 'true') {
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string, @Query('limit') limit?: string) {
+    if (all === 'true' && isAdmin(user)) {
       return this.newsService.listAll()
     }
 
@@ -24,8 +22,8 @@ export class NewsController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.newsService.getById(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.newsService.getById(id), 'errors.news.notFound')
   }
 
   @Post()

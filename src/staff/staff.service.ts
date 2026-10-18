@@ -117,12 +117,14 @@ export class StaffService implements OnApplicationBootstrap {
    * so the result can be checked in 교직원 관리.
    */
   async onApplicationBootstrap() {
-    const pending = await this.staffRepository.find({ where: { startDate: IsNull() } })
+    const pending = await this.staffRepository.find({ where: { startDate: IsNull(), endDate: IsNull() } })
     let filled = 0
 
     for (const member of pending) {
       const period = periodFromText(member.bio)
 
+      // Nothing to read, or nothing new: a current member with no period
+      // stays as is, and so does a former one dated already.
       if (!period && member.isCurrent) {
         continue
       }

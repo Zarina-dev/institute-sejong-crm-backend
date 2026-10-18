@@ -1,39 +1,28 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common'
+import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common'
 
-import { Authenticated } from '../auth/auth.guard'
-import { CreateAlbumDto, UpdateAlbumDto } from './dto/gallery.dto'
+import { CurrentUser } from '../auth/auth.guard'
+import type { AuthUser } from '../auth/auth.service'
+import { isAdmin, visibleTo } from '../auth/visibility'
 import { GalleryService } from './gallery.service'
 
+/**
+ * The albums of the old gallery, read only. They became 행사·대회 records
+ * (competitions), which use the same photo files; the rows stay as the
+ * record of where those came from, and nothing changes or deletes them —
+ * that would take the photos away from the competitions too.
+ */
 @Controller('gallery')
 export class GalleryController {
   constructor(private readonly galleryService: GalleryService) {}
 
-  /** `GET /gallery` — published albums (public). `?all=true` for the admin page. */
+  /** `GET /gallery` — published albums (public). `?all=true` adds the hidden ones, for the admin only. */
   @Get()
-  list(@Query('all') all?: string) {
-    return all === 'true' ? this.galleryService.listAll() : this.galleryService.listPublished()
+  list(@CurrentUser() user: AuthUser | null, @Query('all') all?: string) {
+    return all === 'true' && isAdmin(user) ? this.galleryService.listAll() : this.galleryService.listPublished()
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.galleryService.getById(id)
-  }
-
-  @Post()
-  @Authenticated('admin')
-  create(@Body() body: CreateAlbumDto) {
-    return this.galleryService.create(body)
-  }
-
-  @Patch(':id')
-  @Authenticated('admin')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() body: UpdateAlbumDto) {
-    return this.galleryService.update(id, body)
-  }
-
-  @Delete(':id')
-  @Authenticated('admin')
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.galleryService.remove(id)
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: AuthUser | null) {
+    return visibleTo(user, await this.galleryService.getById(id), 'errors.album.notFound')
   }
 }

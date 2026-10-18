@@ -4,7 +4,7 @@ import type { Request } from 'express'
 
 import { AuthService, type AuthRole, type AuthUser } from './auth.service'
 
-export const ROLES_KEY = 'auth:roles'
+const ROLES_KEY = 'auth:roles'
 
 /**
  * Marks a handler (or a whole controller) as requiring a signed-in user.
@@ -19,8 +19,8 @@ export const CurrentUser = createParamDecorator((_data: unknown, ctx: ExecutionC
 
 /**
  * Registered globally: every route is open unless it carries `Authenticated`.
- * Reads `Authorization: Bearer <token>`; also accepts `?token=` so plain
- * `<a href>` downloads can be authorised.
+ * Reads `Authorization: Bearer <token>`; a protected file's download link
+ * may carry it as `?token=` instead.
  */
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -57,6 +57,12 @@ export class AuthGuard implements CanActivate {
       return header.slice('Bearer '.length).trim()
     }
 
+    // Only for reading a protected file by a plain link (a download cannot
+    // carry a header). Anywhere else a token in the URL would end up in the
+    // browser's history and server logs with the power to change things.
+    if (request.method !== 'GET' || !request.path.startsWith('/api/uploads/documents/')) {
+      return undefined
+    }
     const query = request.query.token
     return typeof query === 'string' ? query : undefined
   }
