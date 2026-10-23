@@ -18,10 +18,6 @@ async function bootstrap() {
   // their translations: ~175 kB → ~25 kB). Anything under 1 kB is sent as is.
   app.use(compression({ threshold: 1024 }))
 
-  // Public reads answered from Redis without touching Nest or the database;
-  // any change retires them (cache/http-cache.ts).
-  app.use(httpCache().middleware)
-
   // Behind a proxy (Cloudflare, a load balancer, nginx) the client's address
   // arrives in X-Forwarded-For. Express believes that header only from the
   // proxies named here, so nobody can forge their address from outside:
@@ -35,6 +31,12 @@ async function bootstrap() {
     credentials: true,
     allowedHeaders: ['Content-Type', 'Accept-Language', 'Authorization'],
   })
+
+  // Public reads answered from Redis without touching Nest or the database;
+  // any change retires them (cache/http-cache.ts). After CORS, never before:
+  // a cached answer leaves from here, and without CORS headers already on it
+  // a browser on another origin (the site, on its own domain) refuses it.
+  app.use(httpCache().middleware)
 
   // Every file lives in Cloudflare R2; this server keeps none. A stored
   // /uploads/images|videos/… path asked of the API (an old link, a client
