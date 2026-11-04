@@ -97,7 +97,18 @@ async function bootstrap() {
   // the language of the request's Accept-Language header.
   app.useGlobalFilters(new I18nExceptionFilter())
 
-  await app.listen(process.env.PORT || 3000)
+  // SIGTERM/SIGINT (a redeploy) close the app in order: no new connections,
+  // requests in flight finish, the database pool and Redis are closed.
+  app.enableShutdownHooks()
+
+  const server = await app.listen(process.env.PORT || 3000)
+  // Railway's proxy reuses connections to this server and drops them after
+  // its own idle time. Node's default keep-alive (5 s) is shorter, so the
+  // server could close a connection just as the proxy sends a request on it
+  // — an intermittent 502. Longer than the proxy's, and headersTimeout above
+  // keepAliveTimeout (a Node requirement for it to hold).
+  server.keepAliveTimeout = 65_000
+  server.headersTimeout = 66_000
 }
 
 void bootstrap()

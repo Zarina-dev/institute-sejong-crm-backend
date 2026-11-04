@@ -110,8 +110,19 @@ export class CompetitionsService implements OnApplicationBootstrap {
   /** Newest edition first — a record page is read from the top. */
   private readonly order = { year: 'DESC', heldOn: 'DESC', title: 'ASC' } as const
 
+  /**
+   * What the public site never reads: where a record was carried over from,
+   * its audit timestamps and its deletion mark (always null here). Only the
+   * admin's list (`all=true`) keeps them — about 6% of the payload.
+   */
+  private readonly publicColumns = {
+    id: true, kind: true, title: true, year: true, heldOn: true, venue: true, participants: true, summary: true,
+    winners: true, coverImage: true, images: true, albumUrl: true, isPublished: true, translations: true,
+  } as const
+
   list({ kind, publishedOnly }: { kind?: CompetitionKind; publishedOnly: boolean }) {
     return this.competitionRepository.find({
+      ...(publishedOnly ? { select: this.publicColumns } : {}),
       where: {
         ...(kind ? { kind } : {}),
         ...(publishedOnly ? { isPublished: true } : {}),

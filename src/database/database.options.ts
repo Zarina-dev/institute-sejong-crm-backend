@@ -30,5 +30,17 @@ export function databaseOptions(): DataSourceOptions {
     // ones before it applied and itself rolled back.
     migrationsTransactionMode: 'each',
     logging: ['error'],
+    // node-postgres' pool, which TypeORM hands these to.
+    poolSize: Number(process.env.DB_POOL_SIZE) || 10,
+    // Without these, a database that does not answer — or a pool with every
+    // connection busy — leaves a request waiting forever. A bounded wait
+    // answers 500 and frees the request instead.
+    connectTimeoutMS: 10_000,
+    extra: {
+      // Idle connections are closed before a proxy or the database drops them silently.
+      idleTimeoutMillis: 30_000,
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10_000,
+    },
   }
 }

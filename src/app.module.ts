@@ -13,6 +13,7 @@ import { CoursesModule } from './courses/courses.module'
 import { DashboardModule } from './dashboard/dashboard.module'
 import { EventsModule } from './events/events.module'
 import { GalleryModule } from './gallery/gallery.module'
+import { CacheShutdown } from './cache/cache.shutdown'
 import { HealthController } from './health.controller'
 import { MaterialsModule } from './materials/materials.module'
 import { MeetingsModule } from './meetings/meetings.module'
@@ -65,5 +66,6 @@ import { UploadsModule } from './uploads/uploads.module'
     UploadsModule,
   ],
   controllers: [HealthController],
+  providers: [CacheShutdown],
 })
 export class AppModule {}
