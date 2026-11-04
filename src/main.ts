@@ -3,6 +3,8 @@ import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import compression from 'compression'
 import type { NextFunction, Request, Response } from 'express'
+import rateLimit from 'express-rate-limit'
+import helmet from 'helmet'
 
 import { AppModule } from './app.module'
 import { httpCache } from './cache/http-cache'
@@ -26,11 +28,39 @@ async function bootstrap() {
   const trustProxy = process.env.TRUST_PROXY?.trim()
   app.set('trust proxy', trustProxy ? (/^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy) : 'loopback, linklocal, uniquelocal')
 
+  // Security headers: nosniff, HSTS, no framing, no X-Powered-By. The API
+  // answers JSON and redirects only; its responses are read cross-origin by
+  // the site, hence `cross-origin` for the resource policy.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }))
+
+  // Sign-in is the token in the Authorization header, never a cookie, so no
+  // credentials mode. CORS_ORIGINS (comma-separated, e.g.
+  // "https://sejong.kg,https://www.sejong.kg") limits which sites may call
+  // the API from a browser; unset, any site may (as before).
+  const corsOrigins = process.env.CORS_ORIGINS?.split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean)
   app.enableCors({
-    origin: true,
-    credentials: true,
+    origin: corsOrigins?.length ? corsOrigins : true,
     allowedHeaders: ['Content-Type', 'Accept-Language', 'Authorization'],
+    maxAge: 600,
   })
+
+  // One address may not flood the API (cached answers included — this is in
+  // front of the cache): RATE_LIMIT requests a minute, 600 by default — a
+  // busy admin screen makes a few dozen. Needs TRUST_PROXY right behind a
+  // proxy, or every visitor counts as the proxy's one address.
+  app.use(
+    '/api',
+    rateLimit({
+      windowMs: 60_000,
+      limit: Number(process.env.RATE_LIMIT) || 600,
+      standardHeaders: 'draft-7',
+      legacyHeaders: false,
+      skip: (request) => request.method === 'OPTIONS',
+      message: { statusCode: 429, message: 'Too many requests, try again in a minute.' },
+    }),
+  )
 
   // Public reads answered from Redis without touching Nest or the database;
   // any change retires them (cache/http-cache.ts). After CORS, never before:

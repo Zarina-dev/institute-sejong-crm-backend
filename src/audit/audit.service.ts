@@ -36,6 +36,12 @@ export class AuditService implements OnApplicationBootstrap, OnApplicationShutdo
     if (this.timer) clearInterval(this.timer)
   }
 
+  /** Whether an account has this name (as typed at sign-in: trimmed, any case). */
+  async isUsername(username: string) {
+    const rows: unknown[] = await this.dataSource.query('SELECT 1 FROM staff_accounts WHERE username = $1 LIMIT 1', [username.trim().toLowerCase()])
+    return rows.length > 0
+  }
+
   /**
    * Writes an entry. Never fails the request it describes: a change that
    * was made stays made even if its journal line could not be written.

@@ -12,6 +12,8 @@ import { MemoryStore, RedisStore, type CacheStore } from './cache.store'
 const TTL_SECONDS = 10 * 60
 /** Bigger answers are served straight from the database rather than copied into Redis. */
 const MAX_BODY = 2 * 1024 * 1024
+/** What a browser may keep of a public answer: 30 s fresh, then a minute more while it refetches. */
+const BROWSER_CACHE = 'public, max-age=30, stale-while-revalidate=60'
 
 /**
  * What visitors read: the public content, which changes only when the admin
@@ -70,8 +72,14 @@ export class HttpCache {
     this.store
       .read(key)
       .then(({ generation, body }) => {
+        // The browser (and any CDN) may keep a public answer briefly too, so
+        // moving between pages and coming back costs no request. Short on
+        // purpose: an edit retires Redis at once, but not copies already out.
+        // Added to, not replaced: CORS has already put `Origin` there.
+        response.vary('Accept-Language').vary('Authorization')
         if (body !== null) {
           response.setHeader('X-Cache', 'HIT')
+          response.setHeader('Cache-Control', BROWSER_CACHE)
           response.type('application/json').send(body)
           return
         }
@@ -89,6 +97,7 @@ export class HttpCache {
           ) {
             this.store.write(generation, key, payload, TTL_SECONDS).catch(() => {})
           }
+          if (response.statusCode === 200 && !response.getHeader('Cache-Control')) response.setHeader('Cache-Control', BROWSER_CACHE)
           return send(payload)
         }
         next()

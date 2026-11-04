@@ -8,6 +8,21 @@ import { PassThrough, Transform } from 'stream'
 import { r2Storage, type StoredKind } from './r2-storage.service'
 import { THUMB_TYPE, thumbnailOf, thumbnailTransform } from './thumbnails'
 
+/** Enough of a file's start to tell every accepted image format apart (WebP needs 12). */
+export const SIGNATURE_BYTES = 12
+
+/** JPEG, PNG, GIF or WebP, by their first bytes — whatever the name or declared type says. */
+export function isImageSignature(head: Buffer) {
+  const starts = (...bytes: number[]) => bytes.every((byte, i) => head[i] === byte)
+  return (
+    starts(0xff, 0xd8, 0xff) || // JPEG
+    starts(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a) || // PNG
+    head.subarray(0, 6).toString('latin1') === 'GIF87a' ||
+    head.subarray(0, 6).toString('latin1') === 'GIF89a' ||
+    (head.subarray(0, 4).toString('latin1') === 'RIFF' && head.subarray(8, 12).toString('latin1') === 'WEBP')
+  )
+}
+
 /**
  * Multer storage that writes nowhere but R2: the request's file stream goes
  * straight into a multipart upload — no file on this server's disk, and no
@@ -28,6 +43,12 @@ export class R2MulterStorage implements StorageEngine {
     private readonly typeFor?: (originalName: string) => string,
     /** Photos: also store the smaller copy the site shows in lists (storage/thumbnails.ts). */
     private readonly thumbnails = false,
+    /**
+     * Checks the file's first bytes (its signature), so what is stored is
+     * what the name and declared type say — an HTML page renamed `a.png`
+     * is refused with `rejection` before it is kept.
+     */
+    private readonly signature?: { accepts: (head: Buffer) => boolean; rejection: () => Error },
   ) {}
 
   private readonly logger = new Logger('R2Upload')
@@ -35,10 +56,30 @@ export class R2MulterStorage implements StorageEngine {
   _handleFile(_req: Request, file: Express.Multer.File, callback: (error?: unknown, info?: Partial<Express.Multer.File>) => void) {
     const name = `${randomUUID()}${extname(file.originalname || '').toLowerCase()}`
     let size = 0
+    const signature = this.signature
+    let head: Buffer | null = signature ? Buffer.alloc(0) : null
+    let rejected = false
+    const reject = () => {
+      rejected = true
+      void upload.abort()
+      void thumb?.abort()
+    }
     const counter = new Transform({
       transform(chunk: Buffer, _encoding, next) {
         size += chunk.length
+        if (head && signature) {
+          head = Buffer.concat([head, chunk])
+          if (head.length >= SIGNATURE_BYTES) {
+            if (!signature.accepts(head)) reject()
+            head = null
+          }
+        }
         next(null, chunk)
+      },
+      flush(done) {
+        // Shorter than any signature: not an image at all.
+        if (head && signature && !signature.accepts(head)) reject()
+        done()
       },
     })
     const original = new PassThrough()
@@ -74,6 +115,12 @@ export class R2MulterStorage implements StorageEngine {
 
     Promise.all([upload.done, thumbDone]).then(
       ([, thumbStored]) => {
+        if (rejected) {
+          void storage.remove(this.kind, name)
+          if (thumbStored && thumbName) void storage.remove('thumbs', thumbName)
+          callback(this.signature!.rejection())
+          return
+        }
         if (tooLarge) {
           if (thumbStored && thumbName) void storage.remove('thumbs', thumbName)
           callback(new Error('File too large'))
@@ -84,6 +131,10 @@ export class R2MulterStorage implements StorageEngine {
       // R2 unreachable or refusing: a 503 the admin can read, not a bare 500.
       () => {
         if (thumbName) void storage.remove('thumbs', thumbName)
+        if (rejected) {
+          callback(this.signature!.rejection())
+          return
+        }
         callback(tooLarge ? new Error('File too large') : new ServiceUnavailableException('errors.storage.unavailable'))
       },
     )

@@ -87,7 +87,12 @@ export class AuditInterceptor implements NestInterceptor {
       return next.handle().pipe(
         tap(() => void this.audit.record({ actor: username, action: 'login', ip, device })),
         catchError((error: unknown) => {
-          void this.audit.record({ actor: username, action: 'login_failed', ip, device })
+          // A failed sign-in may have the password typed into the username
+          // field: an account's name is kept, anything else only by its start.
+          void this.audit
+            .isUsername(username)
+            .then((known) => this.audit.record({ actor: known ? username : `${username.slice(0, 2)}…`, action: 'login_failed', ip, device }))
+            .catch(() => {})
           return throwError(() => error)
         }),
       )

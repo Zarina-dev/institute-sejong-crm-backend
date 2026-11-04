@@ -6,7 +6,7 @@ import { extname } from 'path'
 
 import { Authenticated } from '../auth/auth.guard'
 import { localized } from '../common/i18n/i18n-exception.filter'
-import { R2MulterStorage } from '../storage/r2-multer-storage'
+import { isImageSignature, R2MulterStorage } from '../storage/r2-multer-storage'
 import { r2Storage } from '../storage/r2-storage.service'
 
 export const MAX_UPLOAD_SIZE = 5 * 1024 * 1024
@@ -56,7 +56,10 @@ const extensionOf = (name: string) =>
  */
 const imageUploadOptions: MulterOptions = {
   // With its thumbnail: the smaller copy lists and cards show.
-  storage: new R2MulterStorage('images', undefined, true),
+  storage: new R2MulterStorage('images', undefined, true, {
+    accepts: isImageSignature,
+    rejection: () => new BadRequestException(localized('validation.image.type', { allowed: IMAGE_EXTENSIONS.map((e) => `.${e}`).join(', ') })),
+  }),
   limits: { fileSize: MAX_UPLOAD_SIZE, files: 1 },
   fileFilter: (_req, file, cb) => {
     if (!(IMAGE_EXTENSIONS as readonly string[]).includes(extensionOf(file.originalname)) || !IMAGE_MIME.test(file.mimetype)) {
