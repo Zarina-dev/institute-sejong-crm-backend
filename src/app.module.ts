@@ -15,6 +15,7 @@ import { EventsModule } from './events/events.module'
 import { GalleryModule } from './gallery/gallery.module'
 import { CacheShutdown } from './cache/cache.shutdown'
 import { HealthController } from './health.controller'
+import { HomeModule } from './home/home.module'
 import { MaterialsModule } from './materials/materials.module'
 import { MeetingsModule } from './meetings/meetings.module'
 import { NewsModule } from './news/news.module'
@@ -59,6 +60,7 @@ import { UploadsModule } from './uploads/uploads.module'
     StaffModule,
     StudiesModule,
     GraduatesModule,
+    HomeModule,
     TermsModule,
     TextbooksModule,
     TrashModule,

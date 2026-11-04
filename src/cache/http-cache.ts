@@ -23,7 +23,7 @@ const BROWSER_CACHE = 'public, max-age=30, stale-while-revalidate=60'
  * edits it. The admin's own tools (minutes, trash, audit, dashboard),
  * sign-in, files and downloads are never cached.
  */
-const CACHED = /^\/api\/(competitions|studies|graduates|staff|textbooks|chronology|events|news|courses|schedule|content|gallery|terms|materials)(\/|\?|$)/
+const CACHED = /^\/api\/(home|competitions|studies|graduates|staff|textbooks|chronology|events|news|courses|schedule|content|gallery|terms|materials)(\/|\?|$)/
 const NEVER = /\/download(\?|$)/
 /** Requests that cannot have changed content, so they do not retire the cache. */
 const NO_EFFECT = /^\/api\/(auth|uploads)\//

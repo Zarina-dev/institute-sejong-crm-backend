@@ -12,6 +12,6 @@ import { TimetableService } from './timetable.service'
   imports: [TypeOrmModule.forFeature([Course]), TermsModule],
   controllers: [CoursesController, TimetableController],
   providers: [CoursesService, TimetableService],
-  exports: [CoursesService],
+  exports: [CoursesService, TimetableService],
 })
 export class CoursesModule {}
