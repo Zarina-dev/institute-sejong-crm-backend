@@ -3,10 +3,11 @@ import { NestFactory } from '@nestjs/core'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import compression from 'compression'
 import type { NextFunction, Request, Response } from 'express'
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
 import helmet from 'helmet'
 
 import { AppModule } from './app.module'
+import { clientIp } from './audit/client-info'
 import { httpCache } from './cache/http-cache'
 import { I18nExceptionFilter } from './common/i18n/i18n-exception.filter'
 import { parseMediaUrl, r2Storage } from './storage/r2-storage.service'
@@ -58,6 +59,13 @@ async function bootstrap() {
       standardHeaders: 'draft-7',
       legacyHeaders: false,
       skip: (request) => request.method === 'OPTIONS',
+      // The same visitor the audit log names (audit/client-info.ts), not the proxy.
+      // An IPv6 visitor counts by their /56 (ipKeyGenerator), or one machine
+      // could take a fresh address for every request.
+      keyGenerator: (request) => {
+        const ip = clientIp(request)
+        return ip ? ipKeyGenerator(ip) : 'unknown'
+      },
       message: { statusCode: 429, message: 'Too many requests, try again in a minute.' },
     }),
   )

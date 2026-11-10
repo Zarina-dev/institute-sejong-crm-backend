@@ -2,14 +2,36 @@ import type { Request } from 'express'
 import { lookup } from 'fast-geoip'
 import { isIP } from 'node:net'
 
+const plain = (ip: string) => ip.trim().replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/, '')
+
 /**
- * The client's address. `request.ip` already follows X-Forwarded-For through
- * the proxies Express trusts (TRUST_PROXY in main.ts) and no further, so a
- * forged header from the internet is ignored. An IPv4 client seen over IPv6
- * (`::ffff:1.2.3.4`) is written as plain IPv4.
+ * CLIENT_IP_HEADER names a header the host's own proxy sets to the visitor's
+ * address — on Railway `x-real-ip`. It is needed there because a request
+ * crosses two of Railway's proxies (the point of presence the visitor
+ * reached, then the region's edge), and X-Forwarded-For ends in the first
+ * one's address: with TRUST_PROXY=1 every visitor was "212.102.36.194,
+ * Zurich" and shared one rate limit.
+ *
+ * The header is believed only from a peer on the private network (the
+ * host's proxy); a request reaching the app any other way falls back to
+ * `request.ip`, so nobody on the internet can choose their own address.
+ */
+const CLIENT_IP_HEADER = process.env.CLIENT_IP_HEADER?.trim().toLowerCase() || null
+
+/**
+ * The client's address: CLIENT_IP_HEADER when set and sent by the host's
+ * proxy, else `request.ip`, which follows X-Forwarded-For through the
+ * proxies Express trusts (TRUST_PROXY in main.ts) and no further. An IPv4
+ * client seen over IPv6 (`::ffff:1.2.3.4`) is written as plain IPv4.
  */
 export function clientIp(request: Request): string | null {
-  const ip = (request.ip ?? request.socket?.remoteAddress ?? '').replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/, '')
+  const peer = plain(request.socket?.remoteAddress ?? '')
+  if (CLIENT_IP_HEADER && isLocalIp(peer)) {
+    const value = request.headers[CLIENT_IP_HEADER]
+    const fromProxy = plain(String(Array.isArray(value) ? value[0] : (value ?? '')).split(',')[0])
+    if (isIP(fromProxy)) return fromProxy
+  }
+  const ip = plain(request.ip ?? peer)
   return isIP(ip) ? ip : null
 }
 
