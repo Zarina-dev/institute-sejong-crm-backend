@@ -9,6 +9,7 @@
     "start": "node dist/main",
     "typecheck": "tsc --noEmit",
     "test:auth": "node --test test/auth.e2e.test.mjs",
+    "test:api": "node --test test/api.e2e.test.mjs",
     "db": "node scripts/local-db.mjs",
     "db:copy": "node scripts/copy-db.mjs",
     "admin:create": "node dist/scripts/create-admin.js",

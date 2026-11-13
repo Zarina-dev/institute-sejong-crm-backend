@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Not, Repository } from 'typeorm'
+import { type EntityManager, Not, Repository } from 'typeorm'
 
 import { localized } from '../common/i18n/i18n-exception.filter'
+import { termParam } from '../common/i18n/messages'
 import { Course } from '../courses/entities/course.entity'
 import { ScheduleEvent } from '../events/entities/schedule-event.entity'
 import { CreateTermDto, UpdateTermDto } from './dto/term.dto'
@@ -43,12 +44,13 @@ export class TermsService implements OnApplicationBootstrap {
    * keeps what it has: that may be the admin's deliberate choice (the week
    * before 개강 belonging to the coming semester).
    */
-  async refileEvents() {
+  async refileEvents(manager: EntityManager = this.eventRepository.manager) {
     // One statement instead of an UPDATE per event. Dates are ISO strings,
     // which compare correctly as text; semesters never overlap (see
     // assertNoOverlap), so a date matches at most one. Deleted events and
-    // semesters are left out, as the repository queries did.
-    const moved = await this.eventRepository.query<Array<{ id: string }>>(
+    // semesters are left out, as the repository queries did. `manager` is
+    // the caller's transaction when the semesters change in one.
+    const moved = await manager.query<Array<{ id: string }>>(
       `UPDATE "schedule_events" AS event
           SET "termCode" = term."code", "updated_at" = now()
          FROM "academic_terms" AS term
@@ -105,11 +107,13 @@ export class TermsService implements OnApplicationBootstrap {
 
     // Only a break has a season; a semester never keeps one.
     const term = this.termRepository.create({ ...dto, code, name: dto.name ?? '', season: dto.kind === 'break' ? (dto.season ?? null) : null })
-    const saved = await this.termRepository.save(term)
 
-    await this.refileEvents()
-
-    return saved
+    // The semester and the events it now covers change together, or not at all.
+    return this.termRepository.manager.transaction(async (manager) => {
+      const saved = await manager.save(term)
+      await this.refileEvents(manager)
+      return saved
+    })
   }
 
   async update(id: string, dto: UpdateTermDto) {
@@ -136,22 +140,25 @@ export class TermsService implements OnApplicationBootstrap {
       term.code = await this.nextCode(term.year, term.kind, id)
     }
 
-    const saved = await this.termRepository.save(term)
+    // Four writes that only make sense together: had the classes failed to
+    // follow a new code, they would be filed under a semester that no longer
+    // exists and drop off the site. One transaction — all of it or none.
+    return this.termRepository.manager.transaction(async (manager) => {
+      const saved = await manager.save(term)
+      const courses = manager.getRepository(Course)
 
-    if (saved.code !== oldCode) {
-      await this.courseRepository.update({ term: oldCode }, { term: saved.code })
-    }
+      if (saved.code !== oldCode) {
+        await courses.update({ term: oldCode }, { term: saved.code })
+      }
 
-    // A class that runs the whole semester runs the whole of the new one too.
-    // A class with its own dates keeps them: they were the admin's decision.
-    await this.courseRepository.update(
-      { term: saved.code, followsTerm: true },
-      { startDate: saved.startDate, endDate: saved.endDate },
-    )
+      // A class that runs the whole semester runs the whole of the new one too.
+      // A class with its own dates keeps them: they were the admin's decision.
+      await courses.update({ term: saved.code, followsTerm: true }, { startDate: saved.startDate, endDate: saved.endDate })
 
-    await this.refileEvents()
+      await this.refileEvents(manager)
 
-    return saved
+      return saved
+    })
   }
 
   /**
@@ -204,7 +211,7 @@ export class TermsService implements OnApplicationBootstrap {
       const first = stranded[0]
       throw new BadRequestException(
         localized('validation.term.strandsEvents', {
-          term: term.name || term.code,
+          term: termParam(term),
           count: stranded.length,
           event: `${first.startDate}${first.endDate ? ` ~ ${first.endDate}` : ''} ${first.title}`,
         }),
@@ -220,13 +227,15 @@ export class TermsService implements OnApplicationBootstrap {
     // the site shows them by semester. Its dates and name can still change.
     if (held && (held.courses > 0 || held.events > 0)) {
       throw new BadRequestException(
-        localized('validation.term.inUse', { term: term.name || term.code, courses: held.courses, events: held.events }),
+        localized('validation.term.inUse', { term: termParam(term), courses: held.courses, events: held.events }),
       )
     }
 
     // To 최근 삭제된 항목: restorable for 30 days.
-    await this.termRepository.softRemove(term)
-    await this.refileEvents()
+    await this.termRepository.manager.transaction(async (manager) => {
+      await manager.softRemove(term)
+      await this.refileEvents(manager)
+    })
     return { success: true }
   }
 
@@ -278,7 +287,7 @@ export class TermsService implements OnApplicationBootstrap {
     // Name the term, its period, and the days the two actually share.
     throw new BadRequestException(
       localized('validation.term.overlap', {
-        term: clash.name || clash.code,
+        term: termParam(clash),
         period: `${clash.startDate} ~ ${clash.endDate}`,
         overlap: `${startDate > clash.startDate ? startDate : clash.startDate} ~ ${endDate < clash.endDate ? endDate : clash.endDate}`,
       }),

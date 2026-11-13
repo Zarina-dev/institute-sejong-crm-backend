@@ -19,6 +19,16 @@ type SweepResult = {
   skipped?: string
 }
 
+/** No DATABASE_URL means the local default (database.options.ts); otherwise its host decides. */
+function isLocalDatabase(url: string | undefined) {
+  if (!url?.trim()) return true
+  try {
+    return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
+
 /**
  * Removes stored files — images, videos, documents, materials — that no
  * record uses any more, from both R2 buckets. Most files are removed the
@@ -43,6 +53,14 @@ export class MediaSweepService implements OnApplicationBootstrap, OnApplicationS
   onApplicationBootstrap() {
     // The command-line sweep runs it itself (see sweep-media.ts).
     if (process.env.MEDIA_SWEEP === 'off') return
+    // A copy of the database on this machine knows only the files it was
+    // copied with: sweeping the shared R2 buckets against it would delete
+    // every file uploaded on the live site since. Against a local database
+    // the sweep runs only when asked for (MEDIA_SWEEP=on).
+    if (isLocalDatabase(process.env.DATABASE_URL) && process.env.MEDIA_SWEEP !== 'on') {
+      this.logger.log('Media sweep off: the database is local (MEDIA_SWEEP=on to run it anyway).')
+      return
+    }
 
     void this.sweep().catch((error) => this.logger.error(`Media sweep failed: ${(error as Error).message}`))
     this.timer = setInterval(() => void this.sweep().catch(() => undefined), EVERY)

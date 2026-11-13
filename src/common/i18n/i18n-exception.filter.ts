@@ -1,17 +1,17 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
 import type { Request, Response } from 'express'
 
-import { resolveLanguage, translateMessage, type MessageKey } from './messages'
+import { resolveLanguage, translateMessage, type MessageKey, type MessageParam } from './messages'
 
 /** Payload for an HttpException whose message needs placeholders. */
-type LocalizedMessage = { key: MessageKey; params?: Record<string, string | number> }
+type LocalizedMessage = { key: MessageKey; params?: Record<string, MessageParam> }
 
 /**
  * Argument for `new BadRequestException(localized('…', { ext }))`.
  * Nest uses an object argument *as* the response body, so the key has to sit
  * under `message` for the filter (and any client) to find it.
  */
-export const localized = (key: MessageKey, params?: Record<string, string | number>) => ({
+export const localized = (key: MessageKey, params?: Record<string, MessageParam>) => ({
   message: { key, params } satisfies LocalizedMessage,
 })
 

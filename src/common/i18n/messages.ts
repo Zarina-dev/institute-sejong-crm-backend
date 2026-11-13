@@ -218,7 +218,7 @@ const ko: Dictionary = {
   'validation.course.endDateRequired': '종료일을 선택하세요.',
   'validation.course.endBeforeStart': '종료일은 시작일 이후여야 합니다.',
   'validation.course.periodRequired': '수업이 진행되는 학기를 선택하세요.',
-  'validation.course.periodOutsideTerm': '해당 기간은 「{term}」({period}) 학기를 벗어납니다. 수업 기간은 선택한 학기 안에 있어야 합니다.',
+  'validation.course.periodOutsideTerm': '해당 기간은 「{term}」({period}) 기간을 벗어납니다. 수업 기간은 선택한 학기 안에 있어야 합니다.',
   'validation.news.titleRequired': '제목을 입력하세요.',
   'validation.news.bodyRequired': '공지 내용을 입력하세요.',
   'validation.schedule.timeInvalid': '시간은 HH:mm 형식으로 입력하세요.',
@@ -267,7 +267,7 @@ const ko: Dictionary = {
   "validation.meeting.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
   "validation.meeting.attachmentInvalid": "파일은 이 페이지를 통해 첨부해 주세요.",
   "validation.term.kindInvalid": "1학기, 2학기 또는 방학을 선택하세요.",
-  "validation.term.overlap": "{overlap} 기간이 이미 등록된 「{term}」({period}) 학기와 겹칩니다. 겹치지 않는 날짜를 선택하세요.",
+  "validation.term.overlap": "{overlap} 기간이 이미 등록된 「{term}」({period}) 기간과 겹칩니다. 겹치지 않는 날짜를 선택하세요.",
   "validation.term.dateInvalid": "날짜는 YYYY-MM-DD 형식입니다.",
   "validation.term.endBeforeStart": "종료일은 시작일 이후여야 합니다.",
   "validation.term.duplicate": "이미 등록된 학기입니다.",
@@ -309,7 +309,7 @@ const ky: Dictionary = {
   'validation.course.endDateRequired': 'Аяктоо күнүн тандаңыз.',
   'validation.course.endBeforeStart': 'Аяктоо күнү башталуу күнүнөн кийин болушу керек.',
   'validation.course.periodRequired': 'Сабак өтүүчү семестрди тандаңыз.',
-  'validation.course.periodOutsideTerm': 'Бул күндөр «{term}» ({period}) семестринин чегинен чыгып кетет. Сабак өз семестринин ичинде өтүшү керек.',
+  'validation.course.periodOutsideTerm': 'Бул күндөр «{term}» ({period}) мезгилинин чегинен чыгып кетет. Сабак өз семестринин ичинде өтүшү керек.',
   'validation.news.titleRequired': 'Аталышын киргизиңиз.',
   'validation.news.bodyRequired': 'Билдирүүнүн текстин киргизиңиз.',
   'validation.schedule.timeInvalid': 'Убакытты СС:ММ форматында киргизиңиз.',
@@ -365,7 +365,7 @@ const ky: Dictionary = {
   "errors.term.notFound": "Семестр табылган жок.",
   "errors.storage.unavailable": "Файл сактагычы азыр жеткиликсиз. Бир аздан кийин кайра аракет кылыңыз.",
   "validation.event.noTerm": "{date} эч бир семестрге кирбейт. Адегенде ал семестрди «Семестрлер» бөлүмүнө кошуңуз.",
-  "validation.event.outsideTerm": "{date} тандалган «{term}» ({period}) семестринен тышкары; ал «{actual}» мезгилине кирет. Семестрди же күндөрдү өзгөртүңүз.",
+  "validation.event.outsideTerm": "{date} тандалган «{term}» ({period}) мезгилинен тышкары; ал «{actual}» мезгилине кирет. Семестрди же күндөрдү өзгөртүңүз.",
   "validation.event.crossesTerm": "Аяктоо күнү {date} «{term}» ({period}) мезгилинен ашып кетет. Кийинки семестрге уланган иш-чара ар бирине өзүнчө киргизилет.",
   "validation.term.strandsEvents": "Бул күндөр менен «{term}» семестринин {count} иш-чарасы эч бир семестрге кирбей калат (биринчиси: {event}). Адегенде аларды жылдырыңыз же өчүрүңүз.",
   "errors.upload.notFound": "Файл табылган жок.",
@@ -415,17 +415,72 @@ export function resolveLanguage(header: string | undefined): Language {
   return (match?.tag as Language | undefined) ?? DEFAULT_LANGUAGE
 }
 
+/** What a message needs to name a semester. */
+type TermRef = { code: string; year: number; kind: string; season?: string | null; startDate: string }
+
+/**
+ * A semester as a message parameter. Terms are no longer named by the admin
+ * (the optional name is an office memo), so the code — "2026-1" — was all a
+ * message could show. The label depends on the reader's language, which the
+ * service that throws does not know, so it is worked out in translateMessage.
+ *
+ *   localized('validation.term.overlap', { term: termParam(clash), … })
+ */
+export type TermParam = { termLabel: TermRef }
+export type MessageParam = string | number | TermParam
+
+export const termParam = ({ code, year, kind, season, startDate }: TermRef): TermParam => ({
+  termLabel: { code, year, kind, season: season ?? null, startDate },
+})
+
+type TermSlot = 'first' | 'second' | 'spring' | 'summer' | 'autumn' | 'winter'
+
+/** The site's terms.display.* (frontend/src/i18n/*.ts), word for word. */
+const TERM_LABELS: Record<Language, Record<TermSlot, string>> = {
+  ko: { first: '{year}년 1학기', second: '{year}년 2학기', spring: '{year}년 봄방학', summer: '{year}년 여름방학', autumn: '{year}년 가을방학', winter: '{year}년 겨울방학' },
+  en: { first: 'Spring semester {year}', second: 'Autumn semester {year}', spring: 'Spring break {year}', summer: 'Summer break {year}', autumn: 'Autumn break {year}', winter: 'Winter break {year}' },
+  ru: { first: '1-й семестр {year}', second: '2-й семестр {year}', spring: 'Весенние каникулы {year}', summer: 'Летние каникулы {year}', autumn: 'Осенние каникулы {year}', winter: 'Зимние каникулы {year}' },
+  ky: { first: '{year}-жыл, 1-семестр', second: '{year}-жыл, 2-семестр', spring: '{year}-жыл, жазгы эс алуу', summer: '{year}-жыл, жайкы эс алуу', autumn: '{year}-жыл, күзгү эс алуу', winter: '{year}-жыл, кышкы эс алуу' },
+}
+
+const SEASONS: readonly string[] = ['spring', 'summer', 'autumn', 'winter']
+
+/**
+ * "2026년 1학기", "2026년 여름방학" — as the site's termDisplayName
+ * (frontend/src/features/terms/labels.ts): a break set up before the season
+ * choice existed is read from its dates (starting April–September → summer).
+ */
+export function termLabel(language: Language, term: TermRef): string {
+  let slot: TermSlot
+  if (term.kind === 'first' || term.kind === 'second') {
+    slot = term.kind
+  } else if (term.kind === 'break') {
+    const month = Number(term.startDate.slice(5, 7))
+    slot = term.season && SEASONS.includes(term.season) ? (term.season as TermSlot) : month >= 4 && month <= 9 ? 'summer' : 'winter'
+  } else {
+    return term.code
+  }
+  return TERM_LABELS[language][slot].replace('{year}', String(term.year))
+}
+
+const isTermParam = (value: unknown): value is TermParam =>
+  typeof value === 'object' && value !== null && typeof (value as TermParam).termLabel === 'object'
+
 /**
  * Translates a key with `{placeholder}` substitution. A string that is not a
  * key is returned unchanged, so class-validator's own English defaults and
  * ad-hoc messages still pass through.
  */
-export function translateMessage(language: Language, message: string, params?: Record<string, string | number>): string {
+export function translateMessage(language: Language, message: string, params?: Record<string, MessageParam>): string {
   const template = isMessageKey(message) ? dictionaries[language][message] ?? en[message] : message
 
   if (!params) {
     return template
   }
 
-  return template.replace(/\{(\w+)\}/g, (_, name: string) => (name in params ? String(params[name]) : `{${name}}`))
+  return template.replace(/\{(\w+)\}/g, (_, name: string) => {
+    if (!(name in params)) return `{${name}}`
+    const value = params[name]
+    return isTermParam(value) ? termLabel(language, value.termLabel) : String(value)
+  })
 }

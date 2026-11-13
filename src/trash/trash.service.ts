@@ -80,12 +80,15 @@ export class TrashService implements OnApplicationBootstrap, OnApplicationShutdo
       await this.assertTermRestorable(row as unknown as AcademicTerm)
     }
 
-    await this.repository(kind).restore(id)
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(kind.entity).restore(id)
 
-    // A semester coming back changes which semester events fall under.
-    if (kind.entity === AcademicTerm) {
-      await this.termsService.refileEvents()
-    }
+      // A semester coming back changes which semester events fall under —
+      // in the same transaction, so it never returns without its events.
+      if (kind.entity === AcademicTerm) {
+        await this.termsService.refileEvents(manager)
+      }
+    })
 
     return { success: true }
   }

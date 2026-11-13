@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { localized } from '../common/i18n/i18n-exception.filter'
+import { termParam } from '../common/i18n/messages'
 
 import { TermsService } from '../terms/terms.service'
 import { CreateScheduleEventDto, UpdateScheduleEventDto } from './dto/schedule-event.dto'
@@ -89,7 +90,6 @@ export class EventsService {
    */
   private async fileUnder(startDate: string, endDate: string | null | undefined, chosen?: string | null) {
     const terms = await this.termsService.list()
-    const name = (term: { name: string; code: string }) => term.name || term.code
     const period = (term: { startDate: string; endDate: string }) => `${term.startDate} ~ ${term.endDate}`
     const term = terms.find((candidate) => candidate.startDate <= startDate && startDate <= candidate.endDate)
     const picked = chosen ? terms.find((candidate) => candidate.code === chosen) : undefined
@@ -98,9 +98,9 @@ export class EventsService {
       throw new BadRequestException(
         localized('validation.event.outsideTerm', {
           date: startDate,
-          term: name(picked),
+          term: termParam(picked),
           period: period(picked),
-          actual: term ? name(term) : '—',
+          actual: term ? termParam(term) : '—',
         }),
       )
     }
@@ -110,7 +110,7 @@ export class EventsService {
     }
 
     if (endDate && endDate > term.endDate) {
-      throw new BadRequestException(localized('validation.event.crossesTerm', { date: endDate, term: name(term), period: period(term) }))
+      throw new BadRequestException(localized('validation.event.crossesTerm', { date: endDate, term: termParam(term), period: period(term) }))
     }
 
     return term.code

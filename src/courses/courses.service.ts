@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { localized } from '../common/i18n/i18n-exception.filter'
+import { termParam } from '../common/i18n/messages'
 import { TermsService } from '../terms/terms.service'
 import { CreateCourseDto, UpdateCourseDto } from './dto/course.dto'
 import { weeklyHoursFromSessions } from './session-hours'
@@ -76,7 +77,7 @@ export class CoursesService {
     if (defined && (startDate < defined.startDate || endDate > defined.endDate)) {
       throw new BadRequestException(
         localized('validation.course.periodOutsideTerm', {
-          term: defined.name || defined.code,
+          term: termParam(defined),
           period: `${defined.startDate} ~ ${defined.endDate}`,
         }),
       )
